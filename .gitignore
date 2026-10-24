@@ -1,0 +1,13 @@
+# Datos de pacientes: nunca al repositorio
+*.docx
+!ejemplos/*.docx
+*.doc
+*.xlsx
+informes/
+Informes*/
+
+# Sistema
+.DS_Store
+Thumbs.db
+node_modules/
+__pycache__/
