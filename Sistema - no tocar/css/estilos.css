@@ -72,6 +72,8 @@ button, input { font: inherit; color: inherit; }
 .pestana.activa { color: var(--texto); border-bottom-color: var(--acento); }
 .pestana:disabled { opacity: .4; cursor: not-allowed; }
 .contador { display: inline-block; min-width: 20px; padding: 0 6px; border-radius: 10px; background: var(--elevado); color: #fff; font-size: 12px; margin-left: 4px; }
+.modo-presentacion .solo-revision { display: none !important; }
+#boton-presentacion[aria-pressed="true"] { background: var(--acento); border-color: var(--acento); color: var(--acento-texto); }
 
 .contenido { display: grid; gap: 16px; min-width: 0; }
 .seccion { display: grid; gap: 16px; min-width: 0; }

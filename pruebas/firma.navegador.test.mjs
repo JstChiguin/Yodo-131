@@ -121,6 +121,8 @@ for (const escenario of ESCENARIOS) {
       await pagina.click('.pestana[data-seccion="resumen"]');
       await pagina.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
       verificarFirma(await medirFirma(pagina), `${escenario.nombre}, final de la página`);
+      await pagina.click('#boton-presentacion');
+      verificarFirma(await medirFirma(pagina), `${escenario.nombre}, modo presentación`);
       assert.deepEqual(erroresPagina, [], `La página mostró errores: ${erroresPagina.join(' | ')}`);
     } finally {
       await pagina.close();

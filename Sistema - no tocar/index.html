@@ -15,10 +15,11 @@
         <h1>Lector Yodo 131</h1>
       </div>
       <div class="cabecera-acciones">
-        <label class="boton boton-principal" for="selector-carpeta" id="etiqueta-selector">Elegir carpeta de informes</label>
+        <label class="boton boton-principal solo-revision" for="selector-carpeta" id="etiqueta-selector">Elegir carpeta de informes</label>
         <input type="file" id="selector-carpeta" webkitdirectory directory multiple hidden>
-        <button type="button" class="boton" id="boton-empezar" hidden>Empezar de nuevo</button>
-        <button type="button" class="boton" id="boton-excel" disabled>Descargar Excel</button>
+        <button type="button" class="boton solo-revision" id="boton-empezar" hidden>Empezar de nuevo</button>
+        <button type="button" class="boton solo-revision" id="boton-excel" disabled>Descargar Excel</button>
+        <button type="button" class="boton" id="boton-presentacion" aria-pressed="false" disabled>Modo presentación</button>
         <button type="button" class="boton boton-tema" id="boton-tema" aria-pressed="false">
           <svg class="icono-tema icono-luna" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>
           <svg class="icono-tema icono-sol" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
@@ -29,9 +30,9 @@
 
     <nav class="pestanas" id="pestanas" aria-label="Secciones">
       <button type="button" class="pestana activa" data-seccion="resumen">Gráficos</button>
-      <button type="button" class="pestana" data-seccion="pacientes">Pacientes</button>
-      <button type="button" class="pestana" data-seccion="revisar">Por revisar <span class="contador" id="contador-revisar" hidden></span></button>
-      <button type="button" class="pestana" data-seccion="mantenimiento">Mantenimiento</button>
+      <button type="button" class="pestana solo-revision" data-seccion="pacientes">Pacientes</button>
+      <button type="button" class="pestana solo-revision" data-seccion="revisar">Por revisar <span class="contador" id="contador-revisar" hidden></span></button>
+      <button type="button" class="pestana solo-revision" data-seccion="mantenimiento">Mantenimiento</button>
     </nav>
 
     <main class="contenido">
@@ -54,7 +55,7 @@
       </section>
 
       <section class="seccion" id="seccion-resumen" hidden>
-        <p class="nota nota-archivos" id="nota-archivos"></p>
+        <p class="nota nota-archivos solo-revision" id="nota-archivos"></p>
         <div class="filtro-periodo">
           <div class="campo">
             <label for="filtro-desde">Desde</label>
@@ -184,7 +185,7 @@
             <p class="cobertura" id="cobertura-medico"></p>
             <div class="grafico" id="grafico-medico"></div>
           </article>
-          <article class="tarjeta" id="tarjeta-origen">
+          <article class="tarjeta solo-revision" id="tarjeta-origen">
             <div class="tarjeta-encabezado">
               <h3>Origen de los datos</h3>
               <p class="nota">De dónde sale cada tratamiento: informe Word, planilla Excel o ambos unidos.</p>

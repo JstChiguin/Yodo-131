@@ -50,6 +50,8 @@ Datos que se obtienen:
 
 Cada gráfico explica qué muestra, destaca su conclusión principal e indica cantidad y porcentaje en cada barra. TIRADS y Bethesda muestran el significado de cada categoría. Al pasar el mouse por una barra aparece el detalle. Hay un botón para alternar entre modo claro y oscuro; el programa siempre abre en modo claro.
 
+**Modo presentación:** para proyectar los gráficos en una exposición. Deja a la vista solo los gráficos, las cifras clínicas y el filtro de fechas. Oculta lo de uso interno (datos por revisar y su contador, discrepancias, origen de los datos, tabla con nombres de pacientes, mantenimiento y botones de carga). «Salir de presentación» vuelve a la vista completa.
+
 | Pacientes | Por revisar | Celular |
 |---|---|---|
 | ![Tabla de pacientes](docs/capturas/pacientes.png) | ![Datos por revisar](docs/capturas/revisar.png) | ![Vista en celular](docs/capturas/celular.png) |
@@ -142,12 +144,13 @@ Qué se prueba:
   - las discrepancias queden por revisar;
   - el cáncer se cuente por paciente;
   - los porcentajes usen solo los datos disponibles.
-- **Integridad de la firma:** abre la aplicación en Chromium en escritorio, tablet y celular, en modo claro y oscuro, recorre todas las pestañas y comprueba que:
+- **Integridad de la firma:** abre la aplicación en Chromium en escritorio, tablet y celular, en modo claro y oscuro, recorre todas las pestañas y el modo presentación, y comprueba que:
   - el texto sea exactamente `by Chiguin`;
   - la versión real aparezca centrada debajo;
   - la firma esté visible, flotante y en la esquina inferior derecha, sin nada encima.
 
   Si alguien modifica, elimina, reemplaza, oculta o mueve la firma, la prueba falla con un mensaje del tipo `FIRMA DE AUTOR ALTERADA (...)`. Esta comprobación solo corre en las pruebas: nunca bloquea la aplicación para quien la usa.
+- **Modo presentación:** comprueba que oculte todo lo de uso interno, que los gráficos sigan visibles y que al salir vuelva todo.
 - **Versión:** sigue versionamiento semántico, coincide en `package.json` y `version.js`, y tiene su entrada en el CHANGELOG.
 
 Las pruebas corren automáticamente en GitHub Actions en cada push y pull request (`.github/workflows/pruebas.yml`).

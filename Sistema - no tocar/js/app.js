@@ -13,6 +13,7 @@
     orden: { campo: 'fechaOrden', ascendente: false },
     textoBusqueda: '',
     seccionActiva: 'resumen',
+    enPresentacion: false,
     mantenimientoAbierto: false,
     ultimasEstadisticas: null
   };
@@ -115,6 +116,7 @@
       }
       estado.resultado = ProcesadorInformes.construirResultado(estado.lectura, estado.umbrales);
       elemento('boton-excel').disabled = estado.resultado.tratamientos.length === 0;
+      elemento('boton-presentacion').disabled = !estado.resultado.tratamientos.length;
       actualizarControlesCarga();
       actualizarContadorRevisar();
       const textoRepetidos = cantidadRepetidos ? ` ${formatoNumero.format(cantidadRepetidos)} ya estaban cargados y no se volvieron a contar.` : '';
@@ -132,6 +134,8 @@
     estado.archivosCargados = new Set();
     estado.carpetasCargadas = new Map();
     elemento('boton-excel').disabled = true;
+    elemento('boton-presentacion').disabled = true;
+    cambiarModoPresentacion(false);
     elemento('contador-revisar').hidden = true;
     actualizarControlesCarga();
     mostrarAviso('Se quitaron los archivos cargados. Elija una carpeta para comenzar.');
@@ -209,6 +213,7 @@
       crearCifra('Pacientes con cáncer de tiroides', formatoNumero.format(estadisticas.cantidadPacientesCancer), conteo.filasRegistroCancer ? 'Registro C73, informes y planillas de yodo' : 'Según informes y planillas de yodo'),
       crearCifra('Datos que no coinciden', formatoNumero.format(estadisticas.cantidadConflictos), 'Entre fuentes del mismo tratamiento · ver Por revisar')
     );
+    cifras.lastElementChild.classList.add('solo-revision');
 
     VistaResumen.renderizarGraficos(estadisticas, estado.umbrales);
   }
@@ -420,6 +425,18 @@
     mostrarAviso('Excel descargado. Lo encuentra en la carpeta Descargas.');
   }
 
+  function cambiarModoPresentacion(activar) {
+    estado.enPresentacion = activar;
+    elemento('app').classList.toggle('modo-presentacion', activar);
+    const boton = elemento('boton-presentacion');
+    boton.setAttribute('aria-pressed', String(activar));
+    boton.textContent = activar ? 'Salir de presentación' : 'Modo presentación';
+    if (activar) {
+      mostrarAviso('');
+      if (estado.seccionActiva !== 'resumen') cambiarSeccion('resumen');
+    }
+  }
+
   function actualizarBotonTema() {
     const temaOscuroActivo = Tema.obtenerTemaActual() === Tema.TEMA_OSCURO;
     elemento('boton-tema').setAttribute('aria-pressed', String(temaOscuroActivo));
@@ -478,6 +495,7 @@
     })));
 
     elemento('boton-excel').addEventListener('click', ejecutarConProteccion('App', 'descargarExcel', descargarExcel));
+    elemento('boton-presentacion').addEventListener('click', () => cambiarModoPresentacion(!estado.enPresentacion));
     elemento('boton-empezar').addEventListener('click', ejecutarConProteccion('App', 'empezarDeNuevo', empezarDeNuevo));
 
     elemento('formulario-clave').addEventListener('submit', ejecutarConProteccion('App', 'verificarClave', async (evento) => {
