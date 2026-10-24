@@ -1,5 +1,7 @@
 # Lector Yodo 131
 
+[![Pruebas](https://github.com/JstChiguin/Yodo131/actions/workflows/pruebas.yml/badge.svg)](https://github.com/JstChiguin/Yodo131/actions/workflows/pruebas.yml)
+
 Herramienta **offline** que lee los informes de solicitud de yodoterapia (yodo 131) escritos en Word y los convierte en **gráficos y una planilla Excel**, sin que nadie tenga que transcribir datos.
 
 Nació para resolver un problema real en un servicio de Medicina Interna: la endocrinóloga redacta un informe Word por paciente y necesitaba estadísticas (edad, sexo, motivo de consulta, resultados de exámenes, frecuencia de cáncer de tiroides) sin tener que llenar planillas. El programa vive en su pendrive, se abre con doble clic y se actualiza solo cada vez que se agregan informes.
@@ -92,10 +94,25 @@ Requisitos: Chrome o Edge actualizados (Firefox 113 o superior también sirve). 
 ## Pruebas
 
 ```bash
-node --test pruebas/*.test.mjs                # reglas de extracción y presencia del sello
-node pruebas/revisarCarpeta.mjs ejemplos      # muestra lo que se extrae de cada informe
-python3 herramientas/generarEjemplos.py       # regenera los informes de ejemplo (requiere python-docx)
+npm ci                                       # instala Playwright (solo para pruebas)
+npx playwright install chromium              # navegador para las pruebas
+npm test                                     # todas las pruebas
+node pruebas/revisarCarpeta.mjs ejemplos     # muestra lo que se extrae de cada informe
+python3 herramientas/generarEjemplos.py      # regenera los informes de ejemplo (requiere python-docx)
 ```
+
+Qué se prueba:
+
+- **Extracción:** reglas de lectura con informes ficticios (datos, laboratorio, errores de tipeo, varios informes en un Word, plantillas incompletas, unificación de médicos).
+- **Integridad de la firma:** abre la aplicación en Chromium en escritorio, tablet y celular, en modo claro y oscuro, recorre todas las pestañas y comprueba que:
+  - el texto sea exactamente `by Chiguin`;
+  - la versión real aparezca centrada debajo;
+  - la firma esté visible, flotante y en la esquina inferior derecha, sin nada encima.
+
+  Si alguien modifica, elimina, reemplaza, oculta o mueve la firma, la prueba falla con un mensaje del tipo `FIRMA DE AUTOR ALTERADA (...)`. Esta comprobación solo corre en las pruebas: nunca bloquea la aplicación para quien la usa.
+- **Versión:** sigue versionamiento semántico, coincide en `package.json` y `version.js`, y tiene su entrada en el CHANGELOG.
+
+Las pruebas corren automáticamente en GitHub Actions en cada push y pull request (`.github/workflows/pruebas.yml`).
 
 ## Versiones
 
@@ -107,7 +124,7 @@ La versión se muestra bajo la firma, en la esquina inferior derecha, y en la ho
 
 Para publicar una versión nueva:
 
-1. cambiar el número en `Sistema - no tocar/js/version.js`;
+1. cambiar el número en `Sistema - no tocar/js/version.js` y en `package.json`;
 2. anotar el cambio en `CHANGELOG.md`;
 3. `git commit`, luego `git tag v1.1.0` y `git push --follow-tags`.
 

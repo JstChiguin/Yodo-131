@@ -2,6 +2,15 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y [versionado semántico](https://semver.org/lang/es/).
 
+## [1.1.1] - 2026-10-24
+
+### Corregido
+- Si la firma «by Chiguin» quedaba oculta por estilos, el programa la recreaba una y otra vez y la página se congelaba. Ahora deja de intentarlo, avisa en la consola y la aplicación sigue funcionando.
+
+### Agregado
+- Prueba de integridad de la firma en el navegador. Verifica en escritorio, tablet y celular, en modo claro y oscuro y en todas las pestañas, que el texto sea exactamente "by Chiguin" y que esté visible, flotante, en la esquina inferior derecha y con la versión centrada debajo. Si algo de eso cambia, la prueba falla con un mensaje claro.
+- Integración continua con GitHub Actions: las pruebas corren en cada push y pull request.
+
 ## [1.1.0] - 2026-10-24
 
 ### Agregado

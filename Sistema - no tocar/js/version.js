@@ -1,3 +1,3 @@
 (function (ns) {
-  ns.VERSION_APLICACION = '1.1.0';
+  ns.VERSION_APLICACION = '1.1.1';
 })(globalThis.LectorYodo = globalThis.LectorYodo || {});
