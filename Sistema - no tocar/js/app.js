@@ -1,5 +1,5 @@
 (function (ns) {
-  const { RegistroErrores, ProcesadorInformes, Estadisticas, ExportadorExcel, Configuracion, Seguridad, Graficos, SelloAutor } = ns;
+  const { RegistroErrores, ProcesadorInformes, Estadisticas, ExportadorExcel, Configuracion, Seguridad, Graficos, SelloAutor, Tema, VistaResumen } = ns;
   const formatoNumero = Graficos.formatoNumero;
   const formatoPorcentaje = new Intl.NumberFormat('es-CL', { style: 'percent', maximumFractionDigits: 1 });
   const elemento = (id) => document.getElementById(id);
@@ -17,15 +17,6 @@
     mantenimientoAbierto: false,
     ultimasEstadisticas: null
   };
-
-  const COLORES_DIAGNOSTICO = {
-    'Cáncer de tiroides': 'var(--elevado)',
-    'Hipertiroidismo (Graves / bocio difuso)': 'var(--acento)',
-    'Bocio multinodular o nódulo hiperfuncionante': 'var(--serie-3)',
-    'Otro / no determinado': 'var(--sin-dato)'
-  };
-  const COLORES_ESTADO = { Elevado: 'var(--elevado)', Normal: 'var(--normal)', 'Sin dato': 'var(--sin-dato)' };
-  const COLORES_SI_NO = { 'Sí': 'var(--serie-4)', 'No': 'var(--normal)', 'Sin dato': 'var(--sin-dato)' };
 
   function mostrarAviso(mensaje, esError = false) {
     let aviso = elemento('aviso');
@@ -168,30 +159,7 @@
       crearCifra('Pacientes con cáncer de tiroides', formatoNumero.format(estadisticas.cantidadPacientesCancer), `${porcentajeCancer} de los pacientes`)
     );
 
-    const seriesSexo = [
-      { clave: 'mujeres', nombre: 'Mujeres', color: 'var(--mujeres)' },
-      { clave: 'hombres', nombre: 'Hombres', color: 'var(--hombres)' },
-      { clave: 'sinDato', nombre: 'Sexo sin dato', color: 'var(--sin-dato)' }
-    ];
-    Graficos.dibujarLeyenda(elemento('leyenda-anios'), seriesSexo);
-    Graficos.dibujarBarrasApiladas(elemento('grafico-anios'), estadisticas.porAnio, seriesSexo);
-    Graficos.dibujarBarrasHorizontales(elemento('grafico-diagnostico'), estadisticas.porDiagnostico, (fila) => COLORES_DIAGNOSTICO[fila.categoria] || 'var(--sin-dato)');
-    Graficos.dibujarBarrasHorizontales(elemento('grafico-motivo'), estadisticas.porMotivo, () => 'var(--acento)');
-    Graficos.dibujarBarrasHorizontales(elemento('grafico-edad'), estadisticas.porEdad, (fila) => (fila.categoria === 'Sin dato' ? 'var(--sin-dato)' : 'var(--hombres)'));
-    Graficos.dibujarBarrasHorizontales(elemento('grafico-dosis'), estadisticas.porDosis, (fila) => (fila.categoria.startsWith('Alta') ? 'var(--elevado)' : fila.categoria.startsWith('Sin') || fila.categoria.startsWith('Rech') ? 'var(--sin-dato)' : 'var(--acento)'));
-
-    const { umbrales } = estado;
-    elemento('nota-umbrales').textContent = `Se considera elevado: TRAb > ${umbrales.trab}; tiroglobulina > ${umbrales.tiroglobulina} ng/ml o "en ascenso"; anti-tiroglobulina > ${umbrales.antiTiroglobulina}; anti-TPO > ${umbrales.antiTpo}. "Sin dato" significa que el informe no trae ese examen.`;
-    Graficos.dibujarLeyenda(elemento('leyenda-examenes'), Object.entries(COLORES_ESTADO).map(([nombre, color]) => ({ nombre, color })));
-    Graficos.dibujarProporciones(elemento('grafico-examenes'), estadisticas.examenes, COLORES_ESTADO);
-    Graficos.dibujarBarrasHorizontales(elemento('grafico-tirads'), estadisticas.porTirads, (fila) => (Number(fila.categoria.slice(-1)) >= 5 ? 'var(--elevado)' : 'var(--serie-3)'));
-    Graficos.dibujarProporciones(elemento('grafico-eco'), estadisticas.ecografia, COLORES_SI_NO);
-    Graficos.dibujarBarrasHorizontales(elemento('grafico-bethesda'), estadisticas.porBethesda.map((fila) => ({ ...fila, categoria: `Bethesda ${fila.categoria}` })),
-      (fila) => (/ (V|VI)$/.test(fila.categoria) ? 'var(--elevado)' : 'var(--serie-3)'));
-    Graficos.dibujarBarrasHorizontales(elemento('grafico-histologia'), estadisticas.porHistologia, () => 'var(--elevado)');
-    Graficos.dibujarProporciones(elemento('grafico-antecedentes'), estadisticas.antecedentes, COLORES_SI_NO);
-    Graficos.dibujarLeyenda(elemento('leyenda-antecedentes'), Object.entries(COLORES_SI_NO).map(([nombre, color]) => ({ nombre, color })));
-    Graficos.dibujarBarrasHorizontales(elemento('grafico-medico'), estadisticas.porMedico, () => 'var(--hombres)');
+    VistaResumen.renderizarGraficos(estadisticas, estado.umbrales);
   }
 
   function textoMedicion(medicion) {
@@ -378,7 +346,17 @@
     mostrarAviso('Excel descargado. Lo encuentra en la carpeta Descargas.');
   }
 
+  function actualizarBotonTema() {
+    const temaOscuroActivo = Tema.obtenerTemaActual() === Tema.TEMA_OSCURO;
+    elemento('boton-tema').setAttribute('aria-pressed', String(temaOscuroActivo));
+    elemento('texto-boton-tema').textContent = temaOscuroActivo ? 'Modo claro' : 'Modo oscuro';
+  }
+
   function conectarEventos() {
+    elemento('boton-tema').addEventListener('click', () => {
+      Tema.alternarTema();
+      actualizarBotonTema();
+    });
     document.querySelectorAll('.pestana').forEach((pestana) => pestana.addEventListener('click', () => cambiarSeccion(pestana.dataset.seccion)));
 
     elemento('selector-carpeta').addEventListener('change', ejecutarConProteccion('App', 'elegirCarpeta', async (evento) => {
@@ -482,6 +460,7 @@
 
   function iniciar() {
     SelloAutor.montarSello(elemento('app'));
+    actualizarBotonTema();
     conectarEventos();
     cambiarSeccion('resumen');
     if (typeof DecompressionStream === 'undefined') {

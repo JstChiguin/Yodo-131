@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Lector Yodo 131</title>
   <link rel="stylesheet" href="css/estilos.css">
+  <script src="js/tema.js"></script>
 </head>
 <body>
   <div class="app" id="app">
@@ -17,6 +18,11 @@
         <label class="boton boton-principal" for="selector-carpeta">Elegir carpeta de informes</label>
         <input type="file" id="selector-carpeta" webkitdirectory directory multiple hidden>
         <button type="button" class="boton" id="boton-excel" disabled>Descargar Excel</button>
+        <button type="button" class="boton boton-tema" id="boton-tema" aria-pressed="false">
+          <svg class="icono-tema icono-luna" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>
+          <svg class="icono-tema icono-sol" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+          <span id="texto-boton-tema">Modo oscuro</span>
+        </button>
       </div>
     </header>
 
@@ -63,54 +69,96 @@
         <div class="cifras" id="cifras"></div>
 
         <div class="grilla">
-          <article class="tarjeta tarjeta-ancha">
-            <h3>Informes por año, según sexo</h3>
+          <article class="tarjeta tarjeta-ancha" id="tarjeta-anios">
+            <div class="tarjeta-encabezado">
+              <h3>Informes por año, según sexo</h3>
+              <p class="nota">Cada barra es un año. El número sobre la barra es el total; dentro se ve cuántos son mujeres y hombres.</p>
+            </div>
+            <p class="conclusion" id="conclusion-anios"></p>
             <div class="leyenda" id="leyenda-anios"></div>
             <div class="grafico" id="grafico-anios"></div>
           </article>
-          <article class="tarjeta">
-            <h3>Diagnóstico</h3>
+          <article class="tarjeta" id="tarjeta-diagnostico">
+            <div class="tarjeta-encabezado">
+              <h3>Diagnóstico</h3>
+              <p class="nota">Diagnóstico principal de cada informe.</p>
+            </div>
+            <p class="conclusion" id="conclusion-diagnostico"></p>
             <div class="grafico" id="grafico-diagnostico"></div>
           </article>
-          <article class="tarjeta">
-            <h3>Motivo de consulta</h3>
+          <article class="tarjeta" id="tarjeta-motivo">
+            <div class="tarjeta-encabezado">
+              <h3>Motivo de consulta</h3>
+              <p class="nota">Por qué consultó el paciente, según lo que describe el informe.</p>
+            </div>
+            <p class="conclusion" id="conclusion-motivo"></p>
             <div class="grafico" id="grafico-motivo"></div>
           </article>
-          <article class="tarjeta">
-            <h3>Edad</h3>
+          <article class="tarjeta" id="tarjeta-edad">
+            <div class="tarjeta-encabezado">
+              <h3>Edad</h3>
+              <p class="nota">Edad del paciente en el informe, en rangos de 10 años.</p>
+            </div>
+            <p class="conclusion" id="conclusion-edad"></p>
             <div class="grafico" id="grafico-edad"></div>
           </article>
-          <article class="tarjeta">
-            <h3>Dosis de yodo 131</h3>
+          <article class="tarjeta" id="tarjeta-dosis">
+            <div class="tarjeta-encabezado">
+              <h3>Dosis de yodo 131</h3>
+              <p class="nota">Las dosis bajas suelen usarse en hipertiroidismo; las altas, en el tratamiento del cáncer.</p>
+            </div>
+            <p class="conclusion" id="conclusion-dosis"></p>
             <div class="grafico" id="grafico-dosis"></div>
           </article>
-          <article class="tarjeta tarjeta-ancha">
-            <h3>Resultados de exámenes</h3>
-            <p class="nota" id="nota-umbrales"></p>
+          <article class="tarjeta tarjeta-ancha" id="tarjeta-examenes">
+            <div class="tarjeta-encabezado">
+              <h3>Resultados de exámenes</h3>
+              <p class="nota"><span id="nota-umbrales"></span></p>
+            </div>
+            <p class="conclusion" id="conclusion-examenes"></p>
             <div class="leyenda" id="leyenda-examenes"></div>
-            <div id="grafico-examenes"></div>
+            <div class="grafico" id="grafico-examenes"></div>
           </article>
-          <article class="tarjeta">
-            <h3>Ecografía tiroidea</h3>
+          <article class="tarjeta" id="tarjeta-tirads">
+            <div class="tarjeta-encabezado">
+              <h3>Ecografía tiroidea (TIRADS)</h3>
+              <p class="nota">Clasificación TI-RADS de la ecografía: a mayor número, mayor sospecha de cáncer.</p>
+            </div>
+            <p class="conclusion" id="conclusion-tirads"></p>
             <div class="grafico" id="grafico-tirads"></div>
-            <div id="grafico-eco"></div>
+            <div class="grafico-secundario" id="grafico-eco"></div>
           </article>
-          <article class="tarjeta">
-            <h3>Punción (Bethesda)</h3>
+          <article class="tarjeta" id="tarjeta-bethesda">
+            <div class="tarjeta-encabezado">
+              <h3>Punción (Bethesda)</h3>
+              <p class="nota">Resultado de la punción (PAAF): a mayor número, mayor sospecha de cáncer.</p>
+            </div>
+            <p class="conclusion" id="conclusion-bethesda"></p>
             <div class="grafico" id="grafico-bethesda"></div>
           </article>
-          <article class="tarjeta">
-            <h3>Tipo de cáncer de tiroides</h3>
-            <p class="nota">Según biopsia o punción, solo pacientes con cáncer.</p>
+          <article class="tarjeta" id="tarjeta-histologia">
+            <div class="tarjeta-encabezado">
+              <h3>Tipo de cáncer de tiroides</h3>
+              <p class="nota">Según biopsia o punción, solo en los informes con cáncer.</p>
+            </div>
+            <p class="conclusion" id="conclusion-histologia"></p>
             <div class="grafico" id="grafico-histologia"></div>
           </article>
-          <article class="tarjeta">
-            <h3>Antecedentes</h3>
-            <div id="grafico-antecedentes"></div>
+          <article class="tarjeta" id="tarjeta-antecedentes">
+            <div class="tarjeta-encabezado">
+              <h3>Antecedentes</h3>
+              <p class="nota">Sobre los informes que traen el dato.</p>
+            </div>
+            <p class="conclusion" id="conclusion-antecedentes"></p>
             <div class="leyenda" id="leyenda-antecedentes"></div>
+            <div class="grafico" id="grafico-antecedentes"></div>
           </article>
-          <article class="tarjeta">
-            <h3>Médico tratante</h3>
+          <article class="tarjeta" id="tarjeta-medico">
+            <div class="tarjeta-encabezado">
+              <h3>Médico tratante</h3>
+              <p class="nota">Informes por médico tratante.</p>
+            </div>
+            <p class="conclusion" id="conclusion-medico"></p>
             <div class="grafico" id="grafico-medico"></div>
           </article>
         </div>
@@ -209,6 +257,7 @@
   <script src="js/configuracion.js"></script>
   <script src="js/seguridad.js"></script>
   <script src="js/graficos.js"></script>
+  <script src="js/vistaResumen.js"></script>
   <script src="js/selloAutor.js"></script>
   <script src="js/app.js"></script>
 </body>
