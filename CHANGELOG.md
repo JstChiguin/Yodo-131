@@ -2,6 +2,12 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y [versionado semántico](https://semver.org/lang/es/).
 
+## [1.4.0] - 2026-10-24
+
+### Agregado
+- Botón «Modo presentación» para proyectar los gráficos. Oculta lo que es de uso interno de la doctora: la pestaña «Por revisar» con su contador, la cifra de datos que no coinciden, el gráfico de origen de los datos, la tabla de pacientes (con nombres y RUT), el mantenimiento y los botones de carga y descarga. Se sale con «Salir de presentación», y nada se borra ni se recalcula.
+- La prueba de integridad de la firma también verifica la firma en modo presentación.
+
 ## [1.3.0] - 2026-10-24
 
 ### Agregado
