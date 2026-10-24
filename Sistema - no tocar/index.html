@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Lector Yodo 131</title>
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+  <div class="app" id="app">
+    <header class="cabecera">
+      <div class="cabecera-titulos">
+        <span class="cabecera-unidad">Medicina Interna · Hospital Dr. Eduardo Pereira</span>
+        <h1>Lector Yodo 131</h1>
+      </div>
+      <div class="cabecera-acciones">
+        <label class="boton boton-principal" for="selector-carpeta">Elegir carpeta de informes</label>
+        <input type="file" id="selector-carpeta" webkitdirectory directory multiple hidden>
+        <button type="button" class="boton" id="boton-excel" disabled>Descargar Excel</button>
+      </div>
+    </header>
+
+    <nav class="pestanas" id="pestanas" aria-label="Secciones">
+      <button type="button" class="pestana activa" data-seccion="resumen">Gráficos</button>
+      <button type="button" class="pestana" data-seccion="pacientes">Pacientes</button>
+      <button type="button" class="pestana" data-seccion="revisar">Por revisar <span class="contador" id="contador-revisar" hidden></span></button>
+      <button type="button" class="pestana" data-seccion="mantenimiento">Mantenimiento</button>
+    </nav>
+
+    <main class="contenido">
+      <section class="estado-carga" id="estado-carga" hidden>
+        <div class="barra-progreso"><div id="barra-progreso-relleno"></div></div>
+        <p id="texto-progreso">Leyendo informes…</p>
+      </section>
+
+      <section class="seccion" id="seccion-bienvenida">
+        <div class="bienvenida" id="zona-soltar">
+          <h2>Elija la carpeta donde guarda los informes de yodo</h2>
+          <ol class="pasos">
+            <li>Conecte el pendrive.</li>
+            <li>Haga clic en <strong>Elegir carpeta de informes</strong> y seleccione la carpeta con los Word.</li>
+            <li>Los gráficos aparecen solos. Si agrega informes nuevos, repita el paso 2.</li>
+          </ol>
+          <p class="nota">También puede arrastrar la carpeta a este recuadro. El programa solo lee los Word: no modifica ni borra ninguno.</p>
+          <label class="boton boton-principal boton-grande" for="selector-carpeta">Elegir carpeta de informes</label>
+        </div>
+      </section>
+
+      <section class="seccion" id="seccion-resumen" hidden>
+        <div class="filtro-periodo">
+          <div class="campo">
+            <label for="filtro-desde">Desde</label>
+            <input type="month" id="filtro-desde">
+          </div>
+          <div class="campo">
+            <label for="filtro-hasta">Hasta</label>
+            <input type="month" id="filtro-hasta">
+          </div>
+          <button type="button" class="boton boton-texto" id="boton-todo-periodo">Ver todo</button>
+          <p class="nota" id="nota-periodo"></p>
+        </div>
+
+        <div class="cifras" id="cifras"></div>
+
+        <div class="grilla">
+          <article class="tarjeta tarjeta-ancha">
+            <h3>Informes por año, según sexo</h3>
+            <div class="leyenda" id="leyenda-anios"></div>
+            <div class="grafico" id="grafico-anios"></div>
+          </article>
+          <article class="tarjeta">
+            <h3>Diagnóstico</h3>
+            <div class="grafico" id="grafico-diagnostico"></div>
+          </article>
+          <article class="tarjeta">
+            <h3>Motivo de consulta</h3>
+            <div class="grafico" id="grafico-motivo"></div>
+          </article>
+          <article class="tarjeta">
+            <h3>Edad</h3>
+            <div class="grafico" id="grafico-edad"></div>
+          </article>
+          <article class="tarjeta">
+            <h3>Dosis de yodo 131</h3>
+            <div class="grafico" id="grafico-dosis"></div>
+          </article>
+          <article class="tarjeta tarjeta-ancha">
+            <h3>Resultados de exámenes</h3>
+            <p class="nota" id="nota-umbrales"></p>
+            <div class="leyenda" id="leyenda-examenes"></div>
+            <div id="grafico-examenes"></div>
+          </article>
+          <article class="tarjeta">
+            <h3>Ecografía tiroidea</h3>
+            <div class="grafico" id="grafico-tirads"></div>
+            <div id="grafico-eco"></div>
+          </article>
+          <article class="tarjeta">
+            <h3>Punción (Bethesda)</h3>
+            <div class="grafico" id="grafico-bethesda"></div>
+          </article>
+          <article class="tarjeta">
+            <h3>Tipo de cáncer de tiroides</h3>
+            <p class="nota">Según biopsia o punción, solo pacientes con cáncer.</p>
+            <div class="grafico" id="grafico-histologia"></div>
+          </article>
+          <article class="tarjeta">
+            <h3>Antecedentes</h3>
+            <div id="grafico-antecedentes"></div>
+            <div class="leyenda" id="leyenda-antecedentes"></div>
+          </article>
+          <article class="tarjeta">
+            <h3>Médico tratante</h3>
+            <div class="grafico" id="grafico-medico"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="seccion" id="seccion-pacientes" hidden>
+        <div class="barra-tabla">
+          <input type="search" id="buscador" placeholder="Buscar por nombre, RUT, diagnóstico…" aria-label="Buscar en la tabla">
+          <span class="nota" id="conteo-tabla"></span>
+        </div>
+        <div class="tabla-contenedor">
+          <table class="tabla" id="tabla-pacientes">
+            <thead>
+              <tr>
+                <th><button type="button" data-orden="nombrePaciente">Paciente</button></th>
+                <th><button type="button" data-orden="rut">RUT</button></th>
+                <th><button type="button" data-orden="edad">Edad</button></th>
+                <th><button type="button" data-orden="sexo">Sexo</button></th>
+                <th><button type="button" data-orden="fechaOrden">Fecha</button></th>
+                <th><button type="button" data-orden="diagnostico">Diagnóstico</button></th>
+                <th><button type="button" data-orden="dosisMci">Dosis</button></th>
+                <th><button type="button" data-orden="tirads">TIRADS</button></th>
+                <th><button type="button" data-orden="bethesda">Bethesda</button></th>
+                <th>Exámenes</th>
+                <th>Revisar</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="nota">Haga clic en una fila para ver el texto que se leyó del informe.</p>
+      </section>
+
+      <section class="seccion" id="seccion-revisar" hidden>
+        <article class="tarjeta">
+          <h3>Informes con datos que faltan</h3>
+          <p class="nota">El programa no inventa datos: si algo no está escrito en el Word, aparece aquí. Se corrige en el Word y se vuelve a elegir la carpeta.</p>
+          <ul class="lista-revisar" id="lista-faltantes"></ul>
+        </article>
+        <article class="tarjeta">
+          <h3>Documentos que no se pudieron leer</h3>
+          <ul class="lista-revisar" id="lista-no-leidos"></ul>
+        </article>
+      </section>
+
+      <section class="seccion" id="seccion-mantenimiento" hidden>
+        <article class="tarjeta tarjeta-angosta" id="panel-clave">
+          <h3>Mantenimiento</h3>
+          <p class="nota">Esta sección cambia cómo se interpretan los exámenes. Requiere clave.</p>
+          <form id="formulario-clave" class="formulario" autocomplete="off">
+            <div class="campo">
+              <label for="campo-clave">Clave</label>
+              <input type="password" id="campo-clave" required>
+            </div>
+            <button type="submit" class="boton boton-principal" id="boton-entrar">Entrar</button>
+            <p class="mensaje-error" id="mensaje-clave" role="alert"></p>
+          </form>
+        </article>
+
+        <div id="panel-mantenimiento" hidden>
+          <article class="tarjeta tarjeta-angosta">
+            <h3>Valores sobre los que un examen se considera elevado</h3>
+            <form id="formulario-umbrales" class="formulario">
+              <div class="campo"><label for="umbral-trab">TRAb (sobre)</label><input type="number" step="any" min="0" id="umbral-trab" data-umbral="trab"></div>
+              <div class="campo"><label for="umbral-tiroglobulina">Tiroglobulina ng/ml (sobre)</label><input type="number" step="any" min="0" id="umbral-tiroglobulina" data-umbral="tiroglobulina"></div>
+              <div class="campo"><label for="umbral-antiTiroglobulina">Anti-tiroglobulina UI/ml (sobre)</label><input type="number" step="any" min="0" id="umbral-antiTiroglobulina" data-umbral="antiTiroglobulina"></div>
+              <div class="campo"><label for="umbral-antiTpo">Anti-TPO UI/ml (sobre)</label><input type="number" step="any" min="0" id="umbral-antiTpo" data-umbral="antiTpo"></div>
+              <div class="acciones-formulario">
+                <button type="submit" class="boton boton-principal">Guardar valores</button>
+                <button type="button" class="boton" id="boton-restablecer">Volver a los valores iniciales</button>
+              </div>
+              <p class="nota" id="mensaje-umbrales" role="status"></p>
+            </form>
+          </article>
+          <article class="tarjeta">
+            <h3>Registro de errores del programa</h3>
+            <ul class="lista-revisar" id="lista-errores"></ul>
+            <div class="acciones-formulario">
+              <button type="button" class="boton" id="boton-limpiar-errores">Vaciar registro</button>
+              <button type="button" class="boton" id="boton-bloquear">Cerrar mantenimiento</button>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="js/version.js"></script>
+  <script src="js/registroErrores.js"></script>
+  <script src="js/lectorDocx.js"></script>
+  <script src="js/extractorInforme.js"></script>
+  <script src="js/clasificador.js"></script>
+  <script src="js/procesadorInformes.js"></script>
+  <script src="js/estadisticas.js"></script>
+  <script src="js/exportadorExcel.js"></script>
+  <script src="js/configuracion.js"></script>
+  <script src="js/seguridad.js"></script>
+  <script src="js/graficos.js"></script>
+  <script src="js/selloAutor.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

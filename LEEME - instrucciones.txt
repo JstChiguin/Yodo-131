@@ -1,0 +1,29 @@
+LECTOR YODO 131
+===============
+
+CÓMO USARLO
+1. Conecte el pendrive.
+2. Abra el archivo "ABRIR LECTOR YODO 131" (doble clic). Se abre en Chrome o Edge.
+3. Haga clic en "Elegir carpeta de informes" y elija la carpeta donde guarda los Word.
+4. Listo: aparecen los gráficos. Con "Descargar Excel" se baja una planilla con todos los datos.
+
+Cada vez que agregue informes nuevos, repita el paso 3.
+
+IMPORTANTE
+- El programa solo LEE los Word. No modifica ni borra ninguno.
+- No necesita internet. Los datos no salen del computador.
+- No borre ni mueva la carpeta "Sistema - no tocar".
+- Si un dato no está escrito en el Word, el programa no lo puede adivinar:
+  aparece en la pestaña "Por revisar".
+- Los Word antiguos (.doc) hay que abrirlos en Word y usar "Guardar como" .docx.
+
+Para que los gráficos de exámenes salgan más completos, conviene que la plantilla
+del informe tenga estas líneas, cada una en su propia línea:
+  Ultima TSH: ...; T4L: ...; T3: ...; Trab: ...
+  Tiroglobulina: ...; Anticuerpos Antitiroglobulina: ...; Anti TPO: ...
+  Ecotomografía tiroidea: ... Tirads ...
+  PAAF: ... Bethesda ...
+
+Ante cualquier problema, avisar a Chiguin.
+
+by Chiguin
