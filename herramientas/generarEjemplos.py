@@ -1,6 +1,9 @@
 from pathlib import Path
 
+from datetime import date
+
 from docx import Document
+from openpyxl import Workbook
 
 CARPETA_EJEMPLOS = Path(__file__).resolve().parent.parent / "ejemplos"
 
@@ -85,8 +88,62 @@ def crear_informe(informe):
     documento.save(CARPETA_EJEMPLOS / informe["archivo"])
 
 
+ENCABEZADOS_YODO = ["N°", "PACIENTE", "RUT", "EDAD", "FECHA DE SOLICITUD", "SOLICITUD ENVIADA", "DIAGNÓSTICO", "MÉDICO TRATANTE", "DOSIS", "M/F", "ANT.FAMILIARES", "MORBIDOS", "CIGARRILLO", "OH", "DROGAS"]
+
+FILAS_YODO_FICTICIAS = {
+    "2024": [
+        ["María Ejemplo Rojas", "11.111.111-1", 44, date(2024, 3, 5), "Hipertiroidismo", "Dra. Ana Pérez", 15, "F", "madre", "(-)", "(-)", "(-)", "(-)"],
+        ["Carlos Ejemplo Soto", "12.222.222-2", 52, date(2024, 6, 1), "Carcinoma papilar", "Dr. Luis Soto", 150, "M", "(-)", "HTA", "10/día hasta 2020", "(-)", "(-)"],
+        ["Rosa Ejemplo Díaz", "13.333.333-3", 67, date(2024, 9, 18), None, "Dra.Ana Perez", 30, "F", "una hermana", "DM2", "(-)", "(-)", "(-)"],
+        ["Luis Ejemplo Morales", "18.888.888-8", 38, date(2024, 4, 10), None, "Dra. Carla Muñoz", 15, "M", "(-)", "(-)", "(-)", "leve ocasional", "(-)"],
+        ["Luis Ejemplo Morales", "18.888.888-8", 38, date(2024, 4, 22), None, "Dra. Carla Muñoz", 15, "M", "(-)", "(-)", "(-)", "leve ocasional", "(-)"],
+        ["Carmen Ejemplo Núñez", "19.999.999-9", 55, date(2024, 11, 2), None, "Dr. Luis Soto", 100, "F", "(-)", "(-)", "(-)", "(-)", "(-)"],
+    ],
+    "2025": [
+        ["María Ejemplo Rojas", "11.111.111-1", 45, date(2025, 5, 20), "Hipertiroidismo", "Dra. Ana Pérez", 30, "F", "madre", "(-)", "(-)", "(-)", "(-)"],
+        ["Pedro Ejemplo Vera", "15.555.555-5", 29, date(2025, 4, 1), None, "Dra. Carla Muñoz", 20, "F", "(-)", "(-)", "5/día", "(-)", "(-)"],
+        ["Ana Ejemplo Torres", "17.123.456-7", 47, date(2025, 8, 14), None, "Dra. Ana Pérez", 30, "F", "(-)", "(-)", "(-)", "(-)", "(-)"],
+        ["Jorge Ejemplo Lagos", "17.777.777-7", 61, date(2025, 10, 10), None, "Dra. Carla Muñoz", 15, "M", "un hermano", "HTA; Dislipidemia", "(-)", "(-)", "(-)"],
+    ],
+}
+
+REGISTRO_CANCER_FICTICIO = {
+    "2024": [("12222222", "12222222-2", "EJEMPLO SOTO CARLOS", "M", 52, "15/05/2024"), ("19999999", "19999999-9", "EJEMPLO NUÑEZ CARMEN", "F", 55, "20/10/2024"),
+             ("16543210", "16543210-1", "EJEMPLO SILVA PATRICIA", "F", 41, "08/02/2024")],
+    "2025": [("14444444", "14444444-4", "EJEMPLO MUÑOZ VALENTINA", "F", 35, "02/01/2025"), ("16666666", "16666666-6", "EJEMPLO CASTRO ELENA", "F", 58, "12/06/2025"),
+             ("15432109", "15432109-8", "EJEMPLO PAREDES HUGO", "M", 63, "03/09/2025")],
+}
+
+
+def crear_planilla_yodo():
+    libro = Workbook()
+    libro.remove(libro.active)
+    for anio, filas in FILAS_YODO_FICTICIAS.items():
+        hoja = libro.create_sheet(anio)
+        hoja.append([])
+        hoja.append(ENCABEZADOS_YODO)
+        for numero, (nombre, rut, edad, fecha, diagnostico, medico, dosis, sexo, familia, morbidos, cigarrillo, alcohol, drogas) in enumerate(filas, start=1):
+            hoja.append([numero, nombre, rut, edad, fecha, None, diagnostico, medico, dosis, sexo, familia, morbidos, cigarrillo, alcohol, drogas])
+            hoja.cell(row=hoja.max_row, column=5).number_format = "dd-mm-yyyy"
+    libro.save(CARPETA_EJEMPLOS / "PLANILLA_YODO_131_EJEMPLO.xlsx")
+
+
+def crear_registro_cancer():
+    libro = Workbook()
+    libro.remove(libro.active)
+    for anio, filas in REGISTRO_CANCER_FICTICIO.items():
+        hoja = libro.create_sheet(anio)
+        hoja.append([f"CANCER DE TIROIDES AÑO {anio}"])
+        hoja.append([])
+        for rut_numero, rut, nombre, sexo, edad, fecha in filas:
+            hoja.append(["C73.X", "Tumor maligno de la glándula tiroides", None, None, int(rut_numero), rut, nombre, None, f"{sexo} ", None, 3, "Vivo", edad, fecha])
+    libro.save(CARPETA_EJEMPLOS / "REGISTRO_CANCER_TIROIDES_EJEMPLO.xlsx")
+
+
 if __name__ == "__main__":
     CARPETA_EJEMPLOS.mkdir(exist_ok=True)
     for informe_ficticio in INFORMES_FICTICIOS:
         crear_informe(informe_ficticio)
-    print(f"{len(INFORMES_FICTICIOS)} informes ficticios creados en {CARPETA_EJEMPLOS}")
+    crear_planilla_yodo()
+    crear_registro_cancer()
+    print(f"{len(INFORMES_FICTICIOS)} informes y 2 planillas ficticias creados en {CARPETA_EJEMPLOS}")

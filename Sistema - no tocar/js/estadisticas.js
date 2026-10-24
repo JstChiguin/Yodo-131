@@ -1,6 +1,6 @@
 (function (ns) {
-  const ORDEN_EDAD = ['<20', '20–29', '30–39', '40–49', '50–59', '60–69', '70+', 'Sin dato'];
-  const ORDEN_DOSIS = ['Baja (≤30 mCi)', 'Intermedia (31–99 mCi)', 'Alta (≥100 mCi)', 'Rechazó / no recibió', 'Sin dato'];
+  const ORDEN_EDAD = ['<20', '20–29', '30–39', '40–49', '50–59', '60–69', '70+'];
+  const ORDEN_DOSIS = ['Baja (≤30 mCi)', 'Intermedia (31–99 mCi)', 'Alta (≥100 mCi)', 'Rechazó / no recibió'];
   const ORDEN_BETHESDA = ['I', 'II', 'III', 'IV', 'V', 'VI'];
 
   function claveMes(anio, mes) {
@@ -19,12 +19,7 @@
     });
   }
 
-  function obtenerClavePaciente(registro) {
-    if (registro.rut) return `rut:${registro.rut}`;
-    return `nombre:${(registro.nombrePaciente || registro.archivo).toLowerCase()}`;
-  }
-
-  function contar(registros, obtenerCategoria, ordenFijo) {
+  function calcularDistribucion(registros, obtenerCategoria, ordenFijo) {
     const conteo = new Map();
     for (const registro of registros) {
       const categoria = obtenerCategoria(registro);
@@ -32,8 +27,10 @@
       conteo.set(categoria, (conteo.get(categoria) || 0) + 1);
     }
     const filas = [...conteo].map(([categoria, cantidad]) => ({ categoria, cantidad }));
-    if (ordenFijo) return filas.sort((a, b) => ordenFijo.indexOf(a.categoria) - ordenFijo.indexOf(b.categoria));
-    return filas.sort((a, b) => b.cantidad - a.cantidad);
+    if (ordenFijo) filas.sort((a, b) => ordenFijo.indexOf(a.categoria) - ordenFijo.indexOf(b.categoria));
+    else filas.sort((a, b) => b.cantidad - a.cantidad);
+    const conDato = filas.reduce((suma, fila) => suma + fila.cantidad, 0);
+    return { filas, conDato, sinDato: registros.length - conDato, total: registros.length };
   }
 
   function contarEstadoExamen(registros, campo) {
@@ -49,17 +46,7 @@
     return conteo;
   }
 
-  function obtenerPacientesUnicos(registros) {
-    const pacientes = new Map();
-    for (const registro of registros) {
-      const clave = obtenerClavePaciente(registro);
-      const existente = pacientes.get(clave);
-      if (!existente || (!existente.sexo && registro.sexo)) pacientes.set(clave, registro);
-    }
-    return [...pacientes.values()];
-  }
-
-  function contarPorAnio(registros) {
+  function contarPorAnioYSexo(registros) {
     const porAnio = new Map();
     for (const registro of registros) {
       const clave = registro.anio ? String(registro.anio) : 'Sin fecha';
@@ -72,50 +59,69 @@
     return [...porAnio.values()].sort((a, b) => a.categoria.localeCompare(b.categoria));
   }
 
-  function calcularEstadisticas(todosLosRegistros, filtro) {
-    const registros = filtrarPorPeriodo(todosLosRegistros, filtro);
-    const pacientes = obtenerPacientesUnicos(registros);
-    const registrosCancer = registros.filter((registro) => registro.diagnostico === 'Cáncer de tiroides');
-    const pacientesCancer = obtenerPacientesUnicos(registrosCancer);
-    const edades = registros.map((registro) => registro.edad).filter((edad) => edad != null);
+  function filtrarPorAnios(registros, filtro) {
+    const anioDesde = filtro?.desde ? Number(filtro.desde.slice(0, 4)) : null;
+    const anioHasta = filtro?.hasta ? Number(filtro.hasta.slice(0, 4)) : null;
+    if (!anioDesde && !anioHasta) return registros;
+    return registros.filter((registro) => registro.anio && (!anioDesde || registro.anio >= anioDesde) && (!anioHasta || registro.anio <= anioHasta));
+  }
+
+  function calcularEstadisticas(resultado, filtro) {
+    const tratamientos = filtrarPorPeriodo(resultado.tratamientos, filtro);
+    const tratamientosPorPaciente = new Map();
+    for (const tratamiento of tratamientos) {
+      if (!tratamientosPorPaciente.has(tratamiento.clavePaciente)) tratamientosPorPaciente.set(tratamiento.clavePaciente, []);
+      tratamientosPorPaciente.get(tratamiento.clavePaciente).push(tratamiento);
+    }
+    const pacientes = [...tratamientosPorPaciente.values()].map((tratamientosPaciente) => tratamientosPaciente[0]);
+    const tratamientosCancer = tratamientos.filter((tratamiento) => tratamiento.diagnostico === 'Cáncer de tiroides');
+    const pacientesCancer = filtrarPorAnios(resultado.pacientesCancer, filtro);
+    const edades = tratamientos.map((tratamiento) => tratamiento.edad).filter((edad) => edad != null);
+    const idsEnPeriodo = new Set(tratamientos.map((tratamiento) => tratamiento.idTratamiento));
 
     return {
-      cantidadInformes: registros.length,
-      cantidadSinFecha: todosLosRegistros.filter((registro) => !registro.anio).length,
+      cantidadTratamientos: tratamientos.length,
+      cantidadSinFecha: resultado.tratamientos.filter((tratamiento) => !tratamiento.anio).length,
       cantidadPacientes: pacientes.length,
+      pacientesConVariosTratamientos: [...tratamientosPorPaciente.values()].filter((lista) => lista.length > 1).length,
       pacientesMujeres: pacientes.filter((paciente) => paciente.sexo === 'F').length,
       pacientesHombres: pacientes.filter((paciente) => paciente.sexo === 'M').length,
       pacientesSinSexo: pacientes.filter((paciente) => !paciente.sexo).length,
+      registrosUnidos: tratamientos.reduce((suma, tratamiento) => suma + tratamiento.cantidadFuentes - 1, 0),
+      cantidadConflictos: resultado.conflictos.filter((conflicto) => idsEnPeriodo.has(conflicto.idTratamiento)).length,
       cantidadPacientesCancer: pacientesCancer.length,
       edadPromedio: edades.length ? edades.reduce((suma, edad) => suma + edad, 0) / edades.length : null,
       edadMinima: edades.length ? Math.min(...edades) : null,
       edadMaxima: edades.length ? Math.max(...edades) : null,
-      porAnio: contarPorAnio(registros),
-      porDiagnostico: contar(registros, (registro) => registro.diagnostico),
-      porMotivo: contar(registros, (registro) => registro.motivoCategoria),
-      porEdad: contar(registros, (registro) => registro.grupoEdad, ORDEN_EDAD),
-      porDosis: contar(registros, (registro) => registro.grupoDosis, ORDEN_DOSIS),
-      porHistologia: contar(registrosCancer, (registro) => registro.histologia),
-      porBethesda: contar(registros, (registro) => registro.bethesda, ORDEN_BETHESDA),
-      porTirads: contar(registros, (registro) => (registro.tirads ? `TIRADS ${registro.tirads}` : null)).sort((a, b) => a.categoria.localeCompare(b.categoria)),
-      porMedico: contar(registros, (registro) => registro.medicoTratante || 'Sin dato'),
+      coberturaEdad: { conDato: edades.length, total: tratamientos.length },
+      porAnio: contarPorAnioYSexo(tratamientos),
+      cancerPorAnio: contarPorAnioYSexo(pacientesCancer),
+      porDiagnostico: calcularDistribucion(tratamientos, (tratamiento) => tratamiento.diagnostico),
+      porMotivo: calcularDistribucion(tratamientos, (tratamiento) => tratamiento.motivoCategoria),
+      porEdad: calcularDistribucion(tratamientos, (tratamiento) => tratamiento.grupoEdad, ORDEN_EDAD),
+      porDosis: calcularDistribucion(tratamientos, (tratamiento) => tratamiento.grupoDosis, ORDEN_DOSIS),
+      porHistologia: calcularDistribucion(tratamientosCancer, (tratamiento) => (tratamiento.histologia === 'No especificado' ? null : tratamiento.histologia)),
+      porBethesda: calcularDistribucion(tratamientos, (tratamiento) => tratamiento.bethesda, ORDEN_BETHESDA),
+      porTirads: calcularDistribucion(tratamientos, (tratamiento) => (tratamiento.tirads ? `TIRADS ${tratamiento.tirads}` : null), [1, 2, 3, 4, 5, 6].map((nivel) => `TIRADS ${nivel}`)),
+      porMedico: calcularDistribucion(tratamientos, (tratamiento) => tratamiento.medicoTratante),
+      porOrigen: calcularDistribucion(tratamientos, (tratamiento) => (tratamiento.origenes.length > 1 ? 'Word y Excel' : tratamiento.origenes[0])),
       examenes: {
-        'TRAb': contarEstadoExamen(registros, 'trabElevado'),
-        'Anti-tiroglobulina': contarEstadoExamen(registros, 'antiTiroglobulinaElevado'),
-        'Anti-TPO': contarEstadoExamen(registros, 'antiTpoElevado'),
-        'Tiroglobulina': contarEstadoExamen(registros, 'tiroglobulinaElevada')
+        'TRAb': contarEstadoExamen(tratamientos, 'trabElevado'),
+        'Anti-tiroglobulina': contarEstadoExamen(tratamientos, 'antiTiroglobulinaElevado'),
+        'Anti-TPO': contarEstadoExamen(tratamientos, 'antiTpoElevado'),
+        'Tiroglobulina': contarEstadoExamen(tratamientos, 'tiroglobulinaElevada')
       },
       ecografia: {
-        'Con nódulos': contarSiNo(registros, 'ecoConNodulos'),
-        'Con adenopatías': contarSiNo(registros, 'ecoConAdenopatias')
+        'Con nódulos': contarSiNo(tratamientos, 'ecoConNodulos'),
+        'Con adenopatías': contarSiNo(tratamientos, 'ecoConAdenopatias')
       },
       antecedentes: {
-        'Antecedente familiar tiroideo': contarSiNo(registros, 'tieneAntecedenteFamiliar'),
-        'Tabaquismo actual o previo': contarSiNo(registros, 'esFumador')
+        'Antecedente familiar tiroideo': contarSiNo(tratamientos, 'tieneAntecedenteFamiliar'),
+        'Tabaquismo actual o previo': contarSiNo(tratamientos, 'esFumador')
       },
-      registros
+      tratamientos
     };
   }
 
-  ns.Estadisticas = { calcularEstadisticas, filtrarPorPeriodo };
+  ns.Estadisticas = { calcularEstadisticas, filtrarPorPeriodo, calcularDistribucion };
 })(globalThis.LectorYodo = globalThis.LectorYodo || {});

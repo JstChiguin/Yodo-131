@@ -1,14 +1,11 @@
 (function (ns) {
   const { RegistroErrores, ProcesadorInformes, Estadisticas, ExportadorExcel, Configuracion, Seguridad, Graficos, SelloAutor, Tema, VistaResumen } = ns;
   const formatoNumero = Graficos.formatoNumero;
-  const formatoPorcentaje = new Intl.NumberFormat('es-CL', { style: 'percent', maximumFractionDigits: 1 });
   const elemento = (id) => document.getElementById(id);
 
   const estado = {
-    registrosLeidos: [],
-    registros: [],
-    documentosNoLeidos: [],
-    cantidadArchivos: 0,
+    lectura: null,
+    resultado: null,
     filtro: { desde: '', hasta: '' },
     umbrales: Configuracion.obtenerUmbrales(),
     orden: { campo: 'fechaOrden', ascendente: false },
@@ -43,7 +40,7 @@
   }
 
   function hayDatos() {
-    return estado.registrosLeidos.length > 0 || estado.documentosNoLeidos.length > 0;
+    return Boolean(estado.resultado && (estado.resultado.tratamientos.length || estado.resultado.documentosNoLeidos.length));
   }
 
   function cambiarSeccion(seccion) {
@@ -65,25 +62,22 @@
   }
 
   async function leerArchivos(archivos) {
-    const cantidadWord = archivos.filter((archivo) => ProcesadorInformes.esArchivoWordValido(archivo.nombre)).length;
-    if (!cantidadWord) {
-      mostrarAviso('En esa carpeta no hay archivos Word (.docx). Revise que eligió la carpeta correcta.', true);
+    const cantidadArchivos = archivos.filter((archivo) => ProcesadorInformes.esArchivoSoportado(archivo.nombre)).length;
+    if (!cantidadArchivos) {
+      mostrarAviso('En esa carpeta no hay archivos Word (.docx) ni Excel (.xlsx). Revise que eligió la carpeta correcta.', true);
       return;
     }
     mostrarAviso('');
     elemento('estado-carga').hidden = false;
     const actualizarProgreso = (leidos, total) => {
       elemento('barra-progreso-relleno').style.width = `${(leidos / total) * 100}%`;
-      elemento('texto-progreso').textContent = `Leyendo informes… ${leidos} de ${total}`;
+      elemento('texto-progreso').textContent = `Leyendo archivos… ${leidos} de ${total}`;
     };
-    actualizarProgreso(0, cantidadWord);
+    actualizarProgreso(0, cantidadArchivos);
     try {
-      const resultado = await ProcesadorInformes.procesarArchivos(archivos, estado.umbrales, actualizarProgreso);
-      estado.registrosLeidos = resultado.registros;
-      estado.registros = resultado.registros;
-      estado.documentosNoLeidos = resultado.documentosNoLeidos;
-      estado.cantidadArchivos = resultado.cantidadArchivos;
-      elemento('boton-excel').disabled = estado.registros.length === 0;
+      estado.lectura = await ProcesadorInformes.procesarArchivos(archivos, actualizarProgreso);
+      estado.resultado = ProcesadorInformes.construirResultado(estado.lectura, estado.umbrales);
+      elemento('boton-excel').disabled = estado.resultado.tratamientos.length === 0;
       actualizarContadorRevisar();
       cambiarSeccion(estado.seccionActiva === 'mantenimiento' ? 'resumen' : estado.seccionActiva);
     } finally {
@@ -119,7 +113,7 @@
       const [anio, mes] = mesIso.split('-');
       return new Date(Number(anio), Number(mes) - 1, 1).toLocaleDateString('es-CL', { month: 'long', year: 'numeric' });
     };
-    if (!desde && !hasta) return 'Todos los informes';
+    if (!desde && !hasta) return 'Todos los tratamientos';
     if (desde && hasta) return `De ${formatear(desde)} a ${formatear(hasta)}`;
     return desde ? `Desde ${formatear(desde)}` : `Hasta ${formatear(hasta)}`;
   }
@@ -141,22 +135,26 @@
   }
 
   function renderizarResumen() {
-    const estadisticas = Estadisticas.calcularEstadisticas(estado.registros, estado.filtro);
-    estado.ultimasEstadisticas = estadisticas;
+    const estadisticas = Estadisticas.calcularEstadisticas(estado.resultado, estado.filtro);
+    const { conteo } = estado.resultado;
     const sinFecha = estadisticas.cantidadSinFecha;
     const hayFiltro = estado.filtro.desde || estado.filtro.hasta;
-    elemento('nota-periodo').textContent = `${describirPeriodo()}${hayFiltro && sinFecha ? ` · ${sinFecha} informe(s) sin fecha quedan fuera` : ''}`;
+    elemento('nota-periodo').textContent = `${describirPeriodo()}${hayFiltro && sinFecha ? ` · ${sinFecha} tratamiento(s) sin fecha quedan fuera` : ''}`;
 
-    const porcentajeCancer = estadisticas.cantidadPacientes ? formatoPorcentaje.format(estadisticas.cantidadPacientesCancer / estadisticas.cantidadPacientes) : '—';
+    const fuentesLeidas = [
+      conteo.informesWord && `${formatoNumero.format(conteo.informesWord)} informes Word`,
+      conteo.filasExcelYodo && `${formatoNumero.format(conteo.filasExcelYodo)} filas de Excel`
+    ].filter(Boolean).join(' y ');
     const cifras = elemento('cifras');
     cifras.textContent = '';
     cifras.append(
-      crearCifra('Informes leídos', formatoNumero.format(estadisticas.cantidadInformes), `${formatoNumero.format(estado.cantidadArchivos)} archivos Word en la carpeta`),
-      crearCifra('Pacientes distintos', formatoNumero.format(estadisticas.cantidadPacientes), 'Se cuentan una vez aunque tengan varios informes'),
+      crearCifra('Tratamientos con yodo 131', formatoNumero.format(estadisticas.cantidadTratamientos), `De ${fuentesLeidas || 'ningún registro'}; ${formatoNumero.format(estadisticas.registrosUnidos)} registros repetidos se unieron`),
+      crearCifra('Pacientes únicos', formatoNumero.format(estadisticas.cantidadPacientes), `${formatoNumero.format(estadisticas.pacientesConVariosTratamientos)} con más de un tratamiento`),
       crearCifra('Mujeres', formatoNumero.format(estadisticas.pacientesMujeres), `Hombres: ${formatoNumero.format(estadisticas.pacientesHombres)} · Sin dato: ${formatoNumero.format(estadisticas.pacientesSinSexo)}`),
       crearCifra('Edad promedio', estadisticas.edadPromedio == null ? '—' : `${formatoNumero.format(Math.round(estadisticas.edadPromedio))} años`,
-        estadisticas.edadMinima == null ? 'Sin edades' : `Entre ${estadisticas.edadMinima} y ${estadisticas.edadMaxima} años`),
-      crearCifra('Pacientes con cáncer de tiroides', formatoNumero.format(estadisticas.cantidadPacientesCancer), `${porcentajeCancer} de los pacientes`)
+        estadisticas.edadMinima == null ? 'Sin edades' : `Entre ${estadisticas.edadMinima} y ${estadisticas.edadMaxima} años · dato en ${formatoNumero.format(estadisticas.coberturaEdad.conDato)} de ${formatoNumero.format(estadisticas.coberturaEdad.total)}`),
+      crearCifra('Pacientes con cáncer de tiroides', formatoNumero.format(estadisticas.cantidadPacientesCancer), conteo.filasRegistroCancer ? 'Registro C73, informes y planillas de yodo' : 'Según informes y planillas de yodo'),
+      crearCifra('Datos que no coinciden', formatoNumero.format(estadisticas.cantidadConflictos), 'Entre fuentes del mismo tratamiento · ver Por revisar')
     );
 
     VistaResumen.renderizarGraficos(estadisticas, estado.umbrales);
@@ -175,10 +173,10 @@
   }
 
   function obtenerRegistrosTabla() {
-    const filtrados = Estadisticas.filtrarPorPeriodo(estado.registros, estado.filtro);
+    const filtrados = Estadisticas.filtrarPorPeriodo(estado.resultado.tratamientos, estado.filtro);
     const busqueda = estado.textoBusqueda.trim().toLowerCase();
     const encontrados = busqueda
-      ? filtrados.filter((registro) => [registro.nombrePaciente, registro.rut, registro.diagnostico, registro.histologia, registro.motivoCategoria, registro.medicoTratante, registro.archivo]
+      ? filtrados.filter((registro) => [registro.nombrePaciente, registro.rut, registro.diagnostico, registro.histologia, registro.motivoCategoria, registro.medicoTratante, ...registro.fuentes.map((fuente) => fuente.referencia)]
         .some((valor) => valor && valor.toLowerCase().includes(busqueda)))
       : filtrados;
     const { campo, ascendente } = estado.orden;
@@ -201,8 +199,11 @@
     const grilla = document.createElement('div');
     grilla.className = 'detalle-grilla';
     const campos = [
-      ['Archivo', registro.archivo + (registro.indiceEnArchivo ? ` (informe ${registro.indiceEnArchivo} del archivo)` : '')],
-      ['Motivo', `${registro.motivoCategoria}. ${registro.textoMotivo}`],
+      ['Fuentes', registro.fuentes.map((fuente) => `${fuente.origen}: ${fuente.referencia}${fuente.fechaIso ? ` (${fuente.fechaIso.split('-').reverse().join('/')})` : ''}`).join(' · ')],
+      ['Tratamiento', `${registro.numeroTratamientoPaciente} de ${registro.cantidadTratamientosPaciente} de este paciente`],
+      ...registro.conflictos.map((conflicto) => [`No coincide — ${conflicto.nombreCampo}`, conflicto.valores.map((valor) => `${valor.origen}: ${valor.valor}`).join(' · ')]),
+      ['Motivo', registro.motivoCategoria ? `${registro.motivoCategoria}. ${registro.textoMotivo || ''}` : ''],
+      ['Diagnóstico en Excel', registro.textoDiagnosticoExcel],
       ['Ecografía', registro.textoEco], ['PAAF', registro.textoPaaf], ['Biopsia', registro.textoBiopsia],
       ['Estadificación', registro.estadificacion], ['Cintigrama', registro.textoCintigrama],
       ['Laboratorio', [['TSH', registro.tsh], ['T4L', registro.t4l], ['T3', registro.t3], ['TRAb', registro.trab], ['Anti-Tg', registro.antiTiroglobulina], ['Anti-TPO', registro.antiTpo]]
@@ -210,7 +211,8 @@
         .concat(registro.tiroglobulina?.valorMaximo != null ? [`Tiroglobulina máx. ${String(registro.tiroglobulina.valorMaximo).replace('.', ',')}`] : []).join(' · ')],
       ['Antecedentes familiares', registro.textoAntecedentesFamiliares], ['Mórbidos', registro.textoMorbidos],
       ['Hábitos', [registro.textoCigarrillo && `Cigarrillo: ${registro.textoCigarrillo}`, registro.textoAlcohol && `OH: ${registro.textoAlcohol}`, registro.textoDrogas && `Drogas: ${registro.textoDrogas}`].filter(Boolean).join(' · ')],
-      ['Médico tratante', registro.medicoTratante], ['Sexo', registro.sexo ? `${registro.sexo} (según ${registro.origenSexo.toLowerCase()})` : 'Sin dato'],
+      ['Médico tratante', registro.medicoTratante], ['Sexo', registro.sexo ? `${registro.sexo} (según ${registro.origenSexo.toLowerCase()})` : registro.origenSexo === 'Por revisar' ? 'Por revisar' : 'Sin dato'],
+      ['Cáncer de tiroides', registro.pacienteConCancerRegistrado ? 'El paciente figura en el registro de cáncer de tiroides (C73)' : ''],
       ['Yodo', registro.rechazoYodo ? 'El informe indica que la paciente rechazó o no recibió el yodo' : '']
     ];
     for (const [titulo, texto] of campos) {
@@ -231,7 +233,7 @@
     const cuerpo = document.querySelector('#tabla-pacientes tbody');
     const cantidadColumnas = document.querySelectorAll('#tabla-pacientes thead th').length;
     cuerpo.textContent = '';
-    elemento('conteo-tabla').textContent = `${formatoNumero.format(registrosTabla.length)} informe(s) · ${describirPeriodo()}`;
+    elemento('conteo-tabla').textContent = `${formatoNumero.format(registrosTabla.length)} tratamiento(s) · ${describirPeriodo()}`;
     document.querySelectorAll('#tabla-pacientes th').forEach((encabezado) => {
       const boton = encabezado.querySelector('button');
       if (!boton) return;
@@ -246,9 +248,10 @@
       const valores = [
         registro.nombrePaciente, registro.rut || '', registro.edad ?? '', registro.sexo || '',
         registro.fechaIso ? registro.fechaIso.split('-').reverse().join('/') : registro.anio ?? '',
-        registro.histologia ? `${registro.diagnostico} · ${registro.histologia}` : registro.diagnostico,
+        registro.histologia && registro.histologia !== 'No especificado' ? `${registro.diagnostico} · ${registro.histologia}` : registro.diagnostico ?? '',
         registro.dosisMci != null ? `${registro.dosisMci} mCi${registro.rechazoYodo ? ' (rechazó)' : ''}` : registro.rechazoYodo ? 'Rechazó' : '',
-        registro.tirads ?? '', registro.bethesda ?? ''
+        registro.tirads ?? '', registro.bethesda ?? '',
+        registro.origenes.length > 1 ? 'Word y Excel' : registro.origenes[0]
       ];
       for (const valor of valores) {
         const celda = document.createElement('td');
@@ -262,6 +265,12 @@
         crearEtiquetaExamen('Anti-TPO', registro.antiTpoElevado, textoMedicion(registro.antiTpo))]
         .filter(Boolean).forEach((etiqueta) => celdaExamenes.appendChild(etiqueta));
       const celdaRevisar = document.createElement('td');
+      if (registro.conflictos.length) {
+        const etiquetaConflicto = document.createElement('span');
+        etiquetaConflicto.className = 'etiqueta etiqueta-elevado';
+        etiquetaConflicto.textContent = `No coincide: ${[...new Set(registro.conflictos.map((conflicto) => conflicto.nombreCampo))].join(', ')}`;
+        celdaRevisar.appendChild(etiquetaConflicto);
+      }
       if (registro.camposFaltantes.length) {
         const etiqueta = document.createElement('span');
         etiqueta.className = 'etiqueta etiqueta-revisar';
@@ -281,7 +290,8 @@
   }
 
   function actualizarContadorRevisar() {
-    const cantidad = estado.registros.filter((registro) => registro.camposFaltantes.length).length + estado.documentosNoLeidos.length;
+    const { tratamientos, conflictos, documentosNoLeidos } = estado.resultado;
+    const cantidad = conflictos.length + tratamientos.filter((tratamiento) => tratamiento.camposFaltantes.length).length + documentosNoLeidos.length;
     const contador = elemento('contador-revisar');
     contador.hidden = cantidad === 0;
     contador.textContent = String(cantidad);
@@ -298,18 +308,28 @@
   }
 
   function renderizarRevisar() {
+    const { tratamientos, conflictos, documentosNoLeidos } = estado.resultado;
+    const listaConflictos = elemento('lista-conflictos');
+    listaConflictos.textContent = '';
+    if (!conflictos.length) agregarItemLista(listaConflictos, 'No hay datos contradictorios entre fuentes.', '');
+    for (const conflicto of conflictos) {
+      const fecha = conflicto.fechaIso ? conflicto.fechaIso.split('-').reverse().join('/') : conflicto.anio ?? 'sin fecha';
+      agregarItemLista(listaConflictos, `${conflicto.nombrePaciente || 'Sin nombre'}${conflicto.rut ? ` (${conflicto.rut})` : ''} — ${conflicto.nombreCampo}, tratamiento del ${fecha}`,
+        conflicto.valores.map((valor) => `${valor.origen}: «${valor.valor}» en ${valor.referencia}`).join(' · '));
+    }
+
     const listaFaltantes = elemento('lista-faltantes');
     listaFaltantes.textContent = '';
-    const conFaltantes = estado.registros.filter((registro) => registro.camposFaltantes.length);
-    if (!conFaltantes.length) agregarItemLista(listaFaltantes, 'Todos los informes tienen sus datos principales.', '');
-    for (const registro of conFaltantes) {
-      agregarItemLista(listaFaltantes, `${registro.nombrePaciente || 'Sin nombre'} — falta ${registro.camposFaltantes.join(', ')}`,
-        registro.archivo + (registro.indiceEnArchivo ? ` (informe ${registro.indiceEnArchivo} del archivo)` : ''));
+    const conFaltantes = tratamientos.filter((tratamiento) => tratamiento.camposFaltantes.length);
+    if (!conFaltantes.length) agregarItemLista(listaFaltantes, 'Todos los tratamientos tienen sus datos principales.', '');
+    for (const tratamiento of conFaltantes) {
+      agregarItemLista(listaFaltantes, `${tratamiento.nombrePaciente || 'Sin nombre'} — falta ${tratamiento.camposFaltantes.join(', ')}`,
+        tratamiento.fuentes.map((fuente) => fuente.referencia).join(' · '));
     }
     const listaNoLeidos = elemento('lista-no-leidos');
     listaNoLeidos.textContent = '';
-    if (!estado.documentosNoLeidos.length) agregarItemLista(listaNoLeidos, 'Se pudieron leer todos los documentos.', '');
-    for (const documento of estado.documentosNoLeidos) agregarItemLista(listaNoLeidos, documento.archivo, documento.motivo);
+    if (!documentosNoLeidos.length) agregarItemLista(listaNoLeidos, 'Se pudieron leer todos los documentos.', '');
+    for (const documento of documentosNoLeidos) agregarItemLista(listaNoLeidos, documento.archivo, documento.motivo);
   }
 
   function renderizarMantenimiento() {
@@ -329,13 +349,14 @@
 
   function aplicarUmbrales(umbrales) {
     estado.umbrales = umbrales;
-    estado.registros = ProcesadorInformes.reclasificar(estado.registrosLeidos, umbrales);
+    if (!estado.lectura) return;
+    estado.resultado = ProcesadorInformes.construirResultado(estado.lectura, umbrales);
     actualizarContadorRevisar();
   }
 
   function descargarExcel() {
-    const estadisticas = Estadisticas.calcularEstadisticas(estado.registros, estado.filtro);
-    const libro = ExportadorExcel.exportarLibro(estadisticas, estado.documentosNoLeidos, describirPeriodo());
+    const estadisticas = Estadisticas.calcularEstadisticas(estado.resultado, estado.filtro);
+    const libro = ExportadorExcel.exportarLibro(estadisticas, estado.resultado, describirPeriodo());
     const enlace = document.createElement('a');
     enlace.href = URL.createObjectURL(libro);
     enlace.download = `Yodo131_${new Date().toISOString().slice(0, 10)}.xlsx`;
@@ -464,7 +485,7 @@
     conectarEventos();
     cambiarSeccion('resumen');
     if (typeof DecompressionStream === 'undefined') {
-      mostrarAviso('Este navegador es muy antiguo para leer los Word. Abra el programa con Google Chrome o Microsoft Edge.', true);
+      mostrarAviso('Este navegador es muy antiguo para leer los Word y Excel. Abra el programa con Google Chrome o Microsoft Edge.', true);
     }
   }
 

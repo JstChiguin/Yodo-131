@@ -3,6 +3,7 @@
 !ejemplos/*.docx
 *.doc
 *.xlsx
+!ejemplos/*.xlsx
 informes/
 Informes*/
 

@@ -110,8 +110,11 @@
   const textoElevado = (valor) => (valor === true ? 'Elevado' : valor === false ? 'Normal' : '');
   const textoMedicion = (medicion) => (medicion ? `${medicion.comparador}${String(medicion.valor).replace('.', ',')}` : '');
 
-  const COLUMNAS_INFORMES = [
-    ['Archivo', 34, (r) => r.archivo + (r.indiceEnArchivo ? ` (informe ${r.indiceEnArchivo})` : '')],
+  const COLUMNAS_TRATAMIENTOS = [
+    ['Fuentes', 50, (r) => r.fuentes.map((fuente) => `${fuente.origen}: ${fuente.referencia}`).join(' | ')],
+    ['Origen', 12, (r) => (r.origenes.length > 1 ? 'Word y Excel' : r.origenes[0])],
+    ['Tratamiento N° del paciente', 12, (r) => `${r.numeroTratamientoPaciente} de ${r.cantidadTratamientosPaciente}`],
+    ['Datos que no coinciden', 34, (r) => [...new Set(r.conflictos.map((conflicto) => conflicto.nombreCampo))].join(', ')],
     ['Paciente', 28, (r) => r.nombrePaciente], ['RUT', 13, (r) => r.rut], ['Edad', 6, (r) => r.edad],
     ['Sexo', 6, (r) => r.sexo], ['Origen del sexo', 20, (r) => r.origenSexo],
     ['Fecha', 11, (r) => r.fechaIso || (r.anio ? String(r.anio) : '')], ['Año', 6, (r) => r.anio],
@@ -131,43 +134,67 @@
     ['Antecedentes familiares', 28, (r) => r.textoAntecedentesFamiliares], ['Antecedente familiar', 10, (r) => textoSiNo(r.tieneAntecedenteFamiliar)],
     ['Mórbidos', 40, (r) => r.textoMorbidos], ['Cigarrillo', 24, (r) => r.textoCigarrillo], ['Fumador', 9, (r) => textoSiNo(r.esFumador)],
     ['OH', 20, (r) => r.textoAlcohol], ['Drogas', 18, (r) => r.textoDrogas],
-    ['Datos por revisar', 24, (r) => r.camposFaltantes.join(', ')]
+    ['Diagnóstico en Excel', 30, (r) => r.textoDiagnosticoExcel],
+    ['En registro de cáncer (C73)', 12, (r) => textoSiNo(r.pacienteConCancerRegistrado)],
+    ['Datos que faltan', 24, (r) => r.camposFaltantes.join(', ')]
   ];
 
-  function crearHojaResumen(estadisticas, descripcionPeriodo) {
-    const filas = [['Indicador', 'Categoría', 'Cantidad']];
-    filas.push(['Período', descripcionPeriodo, ''], ['Versión del lector', `v${ns.VERSION_APLICACION || ''}`, ''], ['Informes leídos', '', estadisticas.cantidadInformes], ['Pacientes distintos', '', estadisticas.cantidadPacientes],
-      ['Pacientes', 'Mujeres', estadisticas.pacientesMujeres], ['Pacientes', 'Hombres', estadisticas.pacientesHombres], ['Pacientes', 'Sexo sin dato', estadisticas.pacientesSinSexo],
-      ['Pacientes con cáncer de tiroides', '', estadisticas.cantidadPacientesCancer]);
-    if (estadisticas.edadPromedio != null) filas.push(['Edad promedio', '', Math.round(estadisticas.edadPromedio * 10) / 10]);
-    const agregarConteo = (indicador, conteo) => conteo.forEach((fila) => filas.push([indicador, fila.categoria, fila.cantidad]));
-    agregarConteo('Diagnóstico', estadisticas.porDiagnostico);
-    agregarConteo('Motivo de consulta', estadisticas.porMotivo);
-    agregarConteo('Grupo de edad', estadisticas.porEdad);
-    agregarConteo('Dosis', estadisticas.porDosis);
-    agregarConteo('Tipo histológico (cáncer)', estadisticas.porHistologia);
-    agregarConteo('Bethesda', estadisticas.porBethesda);
-    agregarConteo('TIRADS', estadisticas.porTirads);
+  function crearHojaResumen(estadisticas, resultado, descripcionPeriodo) {
+    const { conteo } = resultado;
+    const filas = [['Indicador', 'Categoría', 'Cantidad', 'Con dato', 'Total', 'Cobertura']];
+    const porcentaje = (parte, total) => (total ? Math.round((parte / total) * 1000) / 10 : '');
+    filas.push(
+      ['Período', descripcionPeriodo], ['Versión del lector', `v${ns.VERSION_APLICACION || ''}`],
+      ['Informes Word leídos', '', conteo.informesWord], ['Filas de Excel de yodo leídas', '', conteo.filasExcelYodo], ['Filas del registro de cáncer leídas', '', conteo.filasRegistroCancer],
+      ['Tratamientos', '', estadisticas.cantidadTratamientos], ['Registros repetidos unidos', '', estadisticas.registrosUnidos],
+      ['Pacientes únicos', '', estadisticas.cantidadPacientes], ['Pacientes con más de un tratamiento', '', estadisticas.pacientesConVariosTratamientos],
+      ['Pacientes', 'Mujeres', estadisticas.pacientesMujeres], ['Pacientes', 'Hombres', estadisticas.pacientesHombres], ['Pacientes', 'Sexo sin dato o por revisar', estadisticas.pacientesSinSexo],
+      ['Pacientes con cáncer de tiroides', '', estadisticas.cantidadPacientesCancer], ['Datos que no coinciden entre fuentes', '', estadisticas.cantidadConflictos]
+    );
+    if (estadisticas.edadPromedio != null) filas.push(['Edad promedio', '', Math.round(estadisticas.edadPromedio * 10) / 10, estadisticas.coberturaEdad.conDato, estadisticas.coberturaEdad.total, porcentaje(estadisticas.coberturaEdad.conDato, estadisticas.coberturaEdad.total)]);
+    const agregarDistribucion = (indicador, distribucion) => distribucion.filas.forEach((fila) => filas.push([indicador, fila.categoria, fila.cantidad, distribucion.conDato, distribucion.total, porcentaje(distribucion.conDato, distribucion.total)]));
+    agregarDistribucion('Diagnóstico', estadisticas.porDiagnostico);
+    agregarDistribucion('Motivo de consulta', estadisticas.porMotivo);
+    agregarDistribucion('Grupo de edad', estadisticas.porEdad);
+    agregarDistribucion('Dosis', estadisticas.porDosis);
+    agregarDistribucion('Tipo histológico (cáncer)', estadisticas.porHistologia);
+    agregarDistribucion('Bethesda', estadisticas.porBethesda);
+    agregarDistribucion('TIRADS', estadisticas.porTirads);
+    agregarDistribucion('Origen de los datos', estadisticas.porOrigen);
     for (const grupo of [estadisticas.examenes, estadisticas.ecografia, estadisticas.antecedentes]) {
-      for (const [nombre, conteo] of Object.entries(grupo)) {
-        for (const [categoria, cantidad] of Object.entries(conteo)) filas.push([nombre, categoria, cantidad]);
+      for (const [nombre, conteoGrupo] of Object.entries(grupo)) {
+        const total = Object.values(conteoGrupo).reduce((suma, cantidad) => suma + cantidad, 0);
+        const conDato = total - conteoGrupo['Sin dato'];
+        for (const [categoria, cantidad] of Object.entries(conteoGrupo)) {
+          if (categoria !== 'Sin dato') filas.push([nombre, categoria, cantidad, conDato, total, porcentaje(conDato, total)]);
+        }
       }
     }
-    return { nombre: 'Resumen', filas, anchos: [32, 34, 10] };
+    estadisticas.cancerPorAnio.forEach((fila) => filas.push(['Pacientes con cáncer de tiroides por año', fila.categoria, fila.mujeres + fila.hombres + fila.sinDato]));
+    return { nombre: 'Resumen', filas, anchos: [34, 36, 10, 10, 10, 11] };
   }
 
-  function exportarLibro(estadisticas, documentosNoLeidos, descripcionPeriodo) {
-    const hojaInformes = {
-      nombre: 'Informes',
-      filas: [COLUMNAS_INFORMES.map(([titulo]) => titulo), ...estadisticas.registros.map((registro) => COLUMNAS_INFORMES.map(([, , obtener]) => obtener(registro) ?? ''))],
-      anchos: COLUMNAS_INFORMES.map(([, ancho]) => ancho)
+  function exportarLibro(estadisticas, resultado, descripcionPeriodo) {
+    const hojaTratamientos = {
+      nombre: 'Tratamientos',
+      filas: [COLUMNAS_TRATAMIENTOS.map(([titulo]) => titulo), ...estadisticas.tratamientos.map((tratamiento) => COLUMNAS_TRATAMIENTOS.map(([, , obtener]) => obtener(tratamiento) ?? ''))],
+      anchos: COLUMNAS_TRATAMIENTOS.map(([, ancho]) => ancho)
+    };
+    const idsEnPeriodo = new Set(estadisticas.tratamientos.map((tratamiento) => tratamiento.idTratamiento));
+    const hojaConflictos = {
+      nombre: 'Por revisar',
+      filas: [['Paciente', 'RUT', 'Fecha del tratamiento', 'Dato', 'Fuente', 'Valor', 'Ubicación'],
+        ...resultado.conflictos.filter((conflicto) => idsEnPeriodo.has(conflicto.idTratamiento)).flatMap((conflicto) => conflicto.valores.map((valor) => [
+          conflicto.nombrePaciente, conflicto.rut, conflicto.fechaIso || (conflicto.anio ? String(conflicto.anio) : ''), conflicto.nombreCampo, valor.origen, valor.valor, valor.referencia
+        ]))],
+      anchos: [28, 13, 12, 24, 26, 30, 50]
     };
     const hojaNoLeidos = {
       nombre: 'No leídos',
-      filas: [['Archivo', 'Motivo'], ...documentosNoLeidos.map((documento) => [documento.archivo, documento.motivo])],
+      filas: [['Archivo', 'Motivo'], ...resultado.documentosNoLeidos.map((documento) => [documento.archivo, documento.motivo])],
       anchos: [40, 70]
     };
-    return crearLibroXlsx([hojaInformes, crearHojaResumen(estadisticas, descripcionPeriodo), hojaNoLeidos]);
+    return crearLibroXlsx([hojaTratamientos, crearHojaResumen(estadisticas, resultado, descripcionPeriodo), hojaConflictos, hojaNoLeidos]);
   }
 
   ns.ExportadorExcel = { exportarLibro };

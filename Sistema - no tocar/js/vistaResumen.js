@@ -2,6 +2,7 @@
   const { Graficos } = ns;
   const { formatoNumero, calcularPorcentaje } = Graficos;
   const elemento = (id) => document.getElementById(id);
+  const UNIDAD = 'tratamientos';
 
   const DESCRIPCION_TIRADS = {
     1: 'Normal', 2: 'No sospechoso', 3: 'Levemente sospechoso',
@@ -11,47 +12,48 @@
     I: 'Muestra no diagnóstica', II: 'Benigno', III: 'Atipia de significado incierto',
     IV: 'Neoplasia folicular', V: 'Sospechoso de cáncer', VI: 'Maligno (cáncer)'
   };
+  const NIVEL_BETHESDA = { I: 1, II: 2, III: 3, IV: 4, V: 5, VI: 6 };
   const COLORES_DIAGNOSTICO = {
     'Cáncer de tiroides': 'var(--elevado)',
     'Hipertiroidismo (Graves / bocio difuso)': 'var(--acento)',
     'Bocio multinodular o nódulo hiperfuncionante': 'var(--serie-3)',
-    'Otro / no determinado': 'var(--sin-dato)'
+    'Otro / no determinado': 'var(--serie-5)'
   };
-  const COLORES_ESTADO = { Elevado: 'var(--elevado)', Normal: 'var(--normal)', 'Sin dato': 'var(--sin-dato)' };
-  const COLORES_SI_NO = { 'Sí': 'var(--serie-4)', 'No': 'var(--normal)', 'Sin dato': 'var(--sin-dato)' };
-  const TEXTO_SIN_DATO = { 'Sin dato': 'var(--texto)' };
+  const COLORES_ORIGEN = { Word: 'var(--acento)', Excel: 'var(--hombres)', 'Word y Excel': 'var(--serie-3)' };
+  const COLORES_ESTADO = { Elevado: 'var(--elevado)', Normal: 'var(--normal)' };
+  const COLORES_SI_NO = { 'Sí': 'var(--serie-4)', 'No': 'var(--normal)' };
   const SERIES_SEXO = [
     { clave: 'mujeres', nombre: 'Mujeres', color: 'var(--mujeres)' },
     { clave: 'hombres', nombre: 'Hombres', color: 'var(--hombres)' },
     { clave: 'sinDato', nombre: 'Sexo sin dato', color: 'var(--sin-dato)', colorTexto: 'var(--texto)' }
   ];
 
-  function sumarCantidades(filas) {
-    return filas.reduce((suma, fila) => suma + fila.cantidad, 0);
-  }
-
-  function escribirConclusion(id, texto) {
-    const parrafo = elemento(`conclusion-${id}`);
+  function escribirTexto(id, texto) {
+    const parrafo = elemento(id);
     parrafo.textContent = texto;
     parrafo.hidden = !texto;
   }
 
-  function obtenerMasFrecuente(filas, excluir = ['Sin dato']) {
-    const consideradas = filas.filter((fila) => !excluir.includes(fila.categoria));
+  function describirCobertura(conDato, total, unidad = UNIDAD) {
+    if (!total) return '';
+    if (conDato === total) return `Dato disponible en todos los ${unidad} (${formatoNumero.format(total)}).`;
+    return `Dato disponible en ${formatoNumero.format(conDato)} de ${formatoNumero.format(total)} ${unidad} (${calcularPorcentaje(conDato, total)}). Sin dato: ${formatoNumero.format(total - conDato)} (${calcularPorcentaje(total - conDato, total)}). Los porcentajes del gráfico se calculan sobre los ${formatoNumero.format(conDato)} con dato.`;
+  }
+
+  function obtenerMasFrecuente(distribucion, excluir = []) {
+    const consideradas = distribucion.filas.filter((fila) => !excluir.includes(fila.categoria));
     if (!consideradas.length) return null;
     const mayor = consideradas.reduce((actual, fila) => (fila.cantidad > actual.cantidad ? fila : actual));
-    const total = sumarCantidades(filas);
-    return { ...mayor, total, detalle: `${formatoNumero.format(mayor.cantidad)} de ${formatoNumero.format(total)}`, porcentaje: calcularPorcentaje(mayor.cantidad, total) };
+    return { ...mayor, detalle: `${formatoNumero.format(mayor.cantidad)} de ${formatoNumero.format(distribucion.conDato)}`, porcentaje: calcularPorcentaje(mayor.cantidad, distribucion.conDato) };
   }
 
-  function describirMasFrecuente(filas, introduccion, unidad = 'informes', excluir = ['Sin dato']) {
-    const mayor = obtenerMasFrecuente(filas, excluir);
-    return mayor ? `${introduccion}: ${mayor.categoria}, con ${mayor.detalle} ${unidad} (${mayor.porcentaje}).` : '';
+  function describirMasFrecuente(distribucion, introduccion, unidadConDato = 'con dato', excluir = []) {
+    const mayor = obtenerMasFrecuente(distribucion, excluir);
+    return mayor ? `${introduccion}: ${mayor.categoria}, con ${mayor.detalle} ${unidadConDato} (${mayor.porcentaje}).` : '';
   }
 
-  function describirProporcionSobreConDato(cantidad, conDato, frase) {
-    if (!conDato) return '';
-    return `${frase}: ${formatoNumero.format(cantidad)} de ${formatoNumero.format(conDato)} (${calcularPorcentaje(cantidad, conDato)}).`;
+  function sumarCategorias(distribucion, condicion) {
+    return distribucion.filas.filter(condicion).reduce((suma, fila) => suma + fila.cantidad, 0);
   }
 
   function colorPorNivel(nivel, umbralAlto, umbralMedio) {
@@ -60,104 +62,128 @@
     return 'var(--serie-3)';
   }
 
-  function renderizarAnios(estadisticas) {
+  function dibujarDistribucion(id, distribucion, opciones) {
+    Graficos.dibujarBarrasHorizontales(elemento(`grafico-${id}`), distribucion.filas, { unidad: UNIDAD, ...opciones, total: distribucion.conDato });
+    escribirTexto(`cobertura-${id}`, describirCobertura(distribucion.conDato, distribucion.total, opciones?.unidadCobertura));
+  }
+
+  function renderizarPorAnio(estadisticas) {
     Graficos.dibujarLeyenda(elemento('leyenda-anios'), SERIES_SEXO);
-    Graficos.dibujarBarrasApiladas(elemento('grafico-anios'), estadisticas.porAnio, SERIES_SEXO);
+    Graficos.dibujarBarrasApiladas(elemento('grafico-anios'), estadisticas.porAnio, SERIES_SEXO, { unidad: UNIDAD });
     const conFecha = estadisticas.porAnio.filter((fila) => fila.categoria !== 'Sin fecha');
-    if (!conFecha.length) return escribirConclusion('anios', '');
     const totalDe = (fila) => fila.mujeres + fila.hombres + fila.sinDato;
-    const anioMayor = conFecha.reduce((actual, fila) => (totalDe(fila) > totalDe(actual) ? fila : actual));
-    const totalMujeres = estadisticas.porAnio.reduce((suma, fila) => suma + fila.mujeres, 0);
-    escribirConclusion('anios', `El año con más informes fue ${anioMayor.categoria} (${formatoNumero.format(totalDe(anioMayor))}). En todo el período, ${formatoNumero.format(totalMujeres)} de ${formatoNumero.format(estadisticas.cantidadInformes)} informes son de mujeres (${calcularPorcentaje(totalMujeres, estadisticas.cantidadInformes)}).`);
+    const conSexo = estadisticas.porAnio.reduce((suma, fila) => suma + fila.mujeres + fila.hombres, 0);
+    const mujeres = estadisticas.porAnio.reduce((suma, fila) => suma + fila.mujeres, 0);
+    if (!conFecha.length) {
+      escribirTexto('conclusion-anios', '');
+    } else {
+      const anioMayor = conFecha.reduce((actual, fila) => (totalDe(fila) > totalDe(actual) ? fila : actual));
+      escribirTexto('conclusion-anios', `El año con más tratamientos fue ${anioMayor.categoria} (${formatoNumero.format(totalDe(anioMayor))}). De los tratamientos con sexo registrado, ${formatoNumero.format(mujeres)} de ${formatoNumero.format(conSexo)} son de mujeres (${calcularPorcentaje(mujeres, conSexo)}).`);
+    }
+    escribirTexto('cobertura-anios', `Sexo disponible en ${formatoNumero.format(conSexo)} de ${formatoNumero.format(estadisticas.cantidadTratamientos)} tratamientos (${calcularPorcentaje(conSexo, estadisticas.cantidadTratamientos)}).${estadisticas.registrosUnidos ? ` Se unieron ${formatoNumero.format(estadisticas.registrosUnidos)} registros que correspondían a un mismo tratamiento.` : ''}`);
+  }
+
+  function renderizarCancerPorAnio(estadisticas) {
+    Graficos.dibujarLeyenda(elemento('leyenda-cancer'), SERIES_SEXO);
+    Graficos.dibujarBarrasApiladas(elemento('grafico-cancer'), estadisticas.cancerPorAnio, SERIES_SEXO, { unidad: 'pacientes' });
+    const total = estadisticas.cancerPorAnio.reduce((suma, fila) => suma + fila.mujeres + fila.hombres + fila.sinDato, 0);
+    if (!total) {
+      escribirTexto('conclusion-cancer', 'No hay registros de cáncer de tiroides en este período.');
+      escribirTexto('cobertura-cancer', '');
+      return;
+    }
+    const mujeres = estadisticas.cancerPorAnio.reduce((suma, fila) => suma + fila.mujeres, 0);
+    const conSexo = estadisticas.cancerPorAnio.reduce((suma, fila) => suma + fila.mujeres + fila.hombres, 0);
+    const anioMayor = estadisticas.cancerPorAnio.reduce((actual, fila) => (fila.mujeres + fila.hombres + fila.sinDato > actual.mujeres + actual.hombres + actual.sinDato ? fila : actual));
+    escribirTexto('conclusion-cancer', `${formatoNumero.format(total)} pacientes con cáncer de tiroides en el período; ${formatoNumero.format(mujeres)} de ${formatoNumero.format(conSexo)} con sexo registrado son mujeres (${calcularPorcentaje(mujeres, conSexo)}). El año con más casos nuevos fue ${anioMayor.categoria}.`);
+    escribirTexto('cobertura-cancer', `Sexo disponible en ${formatoNumero.format(conSexo)} de ${formatoNumero.format(total)} pacientes (${calcularPorcentaje(conSexo, total)}).`);
   }
 
   function renderizarDistribuciones(estadisticas) {
-    Graficos.dibujarBarrasHorizontales(elemento('grafico-diagnostico'), estadisticas.porDiagnostico, { obtenerColor: (fila) => COLORES_DIAGNOSTICO[fila.categoria] || 'var(--sin-dato)' });
-    escribirConclusion('diagnostico', describirMasFrecuente(estadisticas.porDiagnostico, 'Lo más frecuente'));
+    dibujarDistribucion('diagnostico', estadisticas.porDiagnostico, { obtenerColor: (fila) => COLORES_DIAGNOSTICO[fila.categoria] || 'var(--sin-dato)' });
+    escribirTexto('conclusion-diagnostico', describirMasFrecuente(estadisticas.porDiagnostico, 'Lo más frecuente', 'tratamientos con diagnóstico'));
 
-    Graficos.dibujarBarrasHorizontales(elemento('grafico-motivo'), estadisticas.porMotivo, { obtenerColor: () => 'var(--acento)' });
-    escribirConclusion('motivo', describirMasFrecuente(estadisticas.porMotivo, 'El motivo más frecuente', 'informes', ['Sin motivo escrito', 'Otro']));
+    dibujarDistribucion('motivo', estadisticas.porMotivo, { obtenerColor: () => 'var(--acento)' });
+    escribirTexto('conclusion-motivo', describirMasFrecuente(estadisticas.porMotivo, 'El motivo más frecuente', 'tratamientos con motivo escrito', ['Otro']));
 
-    Graficos.dibujarBarrasHorizontales(elemento('grafico-edad'), estadisticas.porEdad, { obtenerColor: (fila) => (fila.categoria === 'Sin dato' ? 'var(--sin-dato)' : 'var(--hombres)') });
+    dibujarDistribucion('edad', estadisticas.porEdad, { obtenerColor: () => 'var(--hombres)' });
     const grupoMayor = obtenerMasFrecuente(estadisticas.porEdad);
-    const textoEdad = grupoMayor ? `El grupo más numeroso es el de ${grupoMayor.categoria} años, con ${grupoMayor.detalle} informes (${grupoMayor.porcentaje}).` : '';
+    const textoEdad = grupoMayor ? `El grupo más numeroso es el de ${grupoMayor.categoria} años, con ${grupoMayor.detalle} tratamientos con edad (${grupoMayor.porcentaje}).` : '';
     const textoPromedio = estadisticas.edadPromedio == null ? '' : ` Edad promedio: ${formatoNumero.format(Math.round(estadisticas.edadPromedio))} años.`;
-    escribirConclusion('edad', `${textoEdad}${textoPromedio}`.trim());
+    escribirTexto('conclusion-edad', `${textoEdad}${textoPromedio}`.trim());
 
-    Graficos.dibujarBarrasHorizontales(elemento('grafico-dosis'), estadisticas.porDosis, {
+    dibujarDistribucion('dosis', estadisticas.porDosis, {
       obtenerColor: (fila) => (fila.categoria.startsWith('Alta') ? 'var(--elevado)' : fila.categoria.startsWith('Intermedia') ? 'var(--serie-4)' : fila.categoria.startsWith('Baja') ? 'var(--acento)' : 'var(--sin-dato)')
     });
-    escribirConclusion('dosis', describirMasFrecuente(estadisticas.porDosis, 'La dosis más indicada', 'informes', ['Sin dato', 'Rechazó / no recibió']));
+    escribirTexto('conclusion-dosis', describirMasFrecuente(estadisticas.porDosis, 'La dosis más indicada', 'tratamientos con dosis', ['Rechazó / no recibió']));
 
-    Graficos.dibujarBarrasHorizontales(elemento('grafico-histologia'), estadisticas.porHistologia, { obtenerColor: () => 'var(--elevado)' });
-    escribirConclusion('histologia', describirMasFrecuente(estadisticas.porHistologia, 'El tipo más frecuente', 'informes con cáncer', ['No especificado']));
+    dibujarDistribucion('histologia', estadisticas.porHistologia, { obtenerColor: () => 'var(--elevado)', unidadCobertura: 'tratamientos con cáncer' });
+    escribirTexto('conclusion-histologia', describirMasFrecuente(estadisticas.porHistologia, 'El tipo más frecuente', 'con tipo informado'));
 
-    Graficos.dibujarBarrasHorizontales(elemento('grafico-medico'), estadisticas.porMedico, { obtenerColor: () => 'var(--hombres)' });
-    escribirConclusion('medico', describirMasFrecuente(estadisticas.porMedico, 'Con más informes'));
+    dibujarDistribucion('medico', estadisticas.porMedico, { obtenerColor: () => 'var(--hombres)' });
+    escribirTexto('conclusion-medico', describirMasFrecuente(estadisticas.porMedico, 'Con más tratamientos', 'con médico registrado'));
+
+    dibujarDistribucion('origen', estadisticas.porOrigen, { obtenerColor: (fila) => COLORES_ORIGEN[fila.categoria] || 'var(--sin-dato)' });
+    const unidos = sumarCategorias(estadisticas.porOrigen, (fila) => fila.categoria === 'Word y Excel');
+    escribirTexto('conclusion-origen', unidos ? `${formatoNumero.format(unidos)} tratamientos tienen datos de Word y de Excel a la vez; sus datos se combinaron y las diferencias quedaron en "Por revisar".` : '');
+  }
+
+  function describirExamen(nombre, conteo) {
+    const conDato = conteo.Elevado + conteo.Normal;
+    const total = conDato + conteo['Sin dato'];
+    if (!conDato) return 'Ningún tratamiento trae este examen';
+    return `Elevado en ${formatoNumero.format(conteo.Elevado)} de ${formatoNumero.format(conDato)} con el examen (${calcularPorcentaje(conteo.Elevado, conDato)}) · registrado en ${formatoNumero.format(conDato)} de ${formatoNumero.format(total)} (${calcularPorcentaje(conDato, total)})`;
+  }
+
+  function describirSiNo(nombre, conteo) {
+    const conDato = conteo['Sí'] + conteo.No;
+    const total = conDato + conteo['Sin dato'];
+    if (!conDato) return 'Ningún tratamiento trae el dato';
+    return `${formatoNumero.format(conteo['Sí'])} de ${formatoNumero.format(conDato)} con el dato (${calcularPorcentaje(conteo['Sí'], conDato)}) · registrado en ${formatoNumero.format(conDato)} de ${formatoNumero.format(total)} (${calcularPorcentaje(conDato, total)})`;
   }
 
   function renderizarExamenes(estadisticas, umbrales) {
-    elemento('nota-umbrales').textContent = `Se considera elevado: TRAb > ${umbrales.trab}; tiroglobulina > ${umbrales.tiroglobulina} ng/ml o "en ascenso"; anti-tiroglobulina > ${umbrales.antiTiroglobulina}; anti-TPO > ${umbrales.antiTpo}. Cada barra muestra solo los informes que traen el examen; los que no lo traen se cuentan aparte como "Sin dato".`;
-    Graficos.dibujarLeyenda(elemento('leyenda-examenes'), Object.entries(COLORES_ESTADO).filter(([nombre]) => nombre !== 'Sin dato').map(([nombre, color]) => ({ nombre, color })));
-    Graficos.dibujarProporciones(elemento('grafico-examenes'), estadisticas.examenes, {
-      colores: COLORES_ESTADO,
-      coloresTexto: TEXTO_SIN_DATO,
-      describirGrupo: (nombre, conteo) => {
-        const conDato = conteo.Elevado + conteo.Normal;
-        return conDato ? `Elevado en ${formatoNumero.format(conteo.Elevado)} de ${formatoNumero.format(conDato)} informes con el examen (${calcularPorcentaje(conteo.Elevado, conDato)})` : 'Ningún informe trae este examen';
-      }
-    });
+    elemento('nota-umbrales').textContent = `Se considera elevado: TRAb > ${umbrales.trab}; tiroglobulina > ${umbrales.tiroglobulina} ng/ml o "en ascenso"; anti-tiroglobulina > ${umbrales.antiTiroglobulina}; anti-TPO > ${umbrales.antiTpo}. Cada barra muestra solo los tratamientos que traen el examen; un examen no registrado no cuenta como normal.`;
+    Graficos.dibujarLeyenda(elemento('leyenda-examenes'), Object.entries(COLORES_ESTADO).map(([nombre, color]) => ({ nombre, color })));
+    Graficos.dibujarProporciones(elemento('grafico-examenes'), estadisticas.examenes, { colores: COLORES_ESTADO, describirGrupo: describirExamen, unidad: UNIDAD });
     const examenesConDato = Object.entries(estadisticas.examenes).map(([nombre, conteo]) => ({ nombre, conDato: conteo.Elevado + conteo.Normal })).filter((examen) => examen.conDato);
-    if (!examenesConDato.length) return escribirConclusion('examenes', 'Ningún informe del período trae estos exámenes.');
+    escribirTexto('cobertura-examenes', '');
+    if (!examenesConDato.length) return escribirTexto('conclusion-examenes', 'Ningún tratamiento del período trae estos exámenes. Las planillas Excel no los incluyen; solo vienen en los informes Word.');
     const masInformado = examenesConDato.reduce((actual, examen) => (examen.conDato > actual.conDato ? examen : actual));
-    escribirConclusion('examenes', `El examen que más aparece es ${masInformado.nombre}: está en ${formatoNumero.format(masInformado.conDato)} de ${formatoNumero.format(estadisticas.cantidadInformes)} informes.`);
+    escribirTexto('conclusion-examenes', `El examen más registrado es ${masInformado.nombre}: está en ${formatoNumero.format(masInformado.conDato)} de ${formatoNumero.format(estadisticas.cantidadTratamientos)} tratamientos (${calcularPorcentaje(masInformado.conDato, estadisticas.cantidadTratamientos)}).`);
   }
 
   function renderizarImagenesYPuncion(estadisticas) {
-    Graficos.dibujarBarrasHorizontales(elemento('grafico-tirads'), estadisticas.porTirads, {
+    dibujarDistribucion('tirads', estadisticas.porTirads, {
       obtenerColor: (fila) => colorPorNivel(Number(fila.categoria.slice(-1)), 5, 4),
       obtenerDescripcion: (fila) => DESCRIPCION_TIRADS[fila.categoria.slice(-1)] || ''
     });
-    const totalTirads = sumarCantidades(estadisticas.porTirads);
-    const altaSospecha = estadisticas.porTirads.filter((fila) => Number(fila.categoria.slice(-1)) >= 5).reduce((suma, fila) => suma + fila.cantidad, 0);
-    escribirConclusion('tirads', describirProporcionSobreConDato(altaSospecha, totalTirads, 'Alta sospecha (TIRADS 5 o más) en ecografías clasificadas'));
-    Graficos.dibujarProporciones(elemento('grafico-eco'), estadisticas.ecografia, {
-      colores: COLORES_SI_NO,
-      coloresTexto: TEXTO_SIN_DATO,
-      describirGrupo: (nombre, conteo) => {
-        const conDato = conteo['Sí'] + conteo.No;
-        return conDato ? `${formatoNumero.format(conteo['Sí'])} de ${formatoNumero.format(conDato)} ecografías (${calcularPorcentaje(conteo['Sí'], conDato)})` : 'Sin ecografías descritas';
-      }
-    });
+    const altaSospecha = sumarCategorias(estadisticas.porTirads, (fila) => Number(fila.categoria.slice(-1)) >= 5);
+    escribirTexto('conclusion-tirads', estadisticas.porTirads.conDato ? `Alta sospecha (TIRADS 5 o más): ${formatoNumero.format(altaSospecha)} de ${formatoNumero.format(estadisticas.porTirads.conDato)} ecografías clasificadas (${calcularPorcentaje(altaSospecha, estadisticas.porTirads.conDato)}).` : '');
+    Graficos.dibujarProporciones(elemento('grafico-eco'), estadisticas.ecografia, { colores: COLORES_SI_NO, describirGrupo: describirSiNo, unidad: UNIDAD });
 
-    const romanoBethesda = (fila) => fila.categoria.replace('Bethesda ', '');
-    const filasBethesda = estadisticas.porBethesda.map((fila) => ({ ...fila, categoria: `Bethesda ${fila.categoria}` }));
-    const nivelBethesda = { I: 1, II: 2, III: 3, IV: 4, V: 5, VI: 6 };
-    Graficos.dibujarBarrasHorizontales(elemento('grafico-bethesda'), filasBethesda, {
-      obtenerColor: (fila) => colorPorNivel(nivelBethesda[romanoBethesda(fila)], 5, 3),
-      obtenerDescripcion: (fila) => DESCRIPCION_BETHESDA[romanoBethesda(fila)] || ''
+    const romano = (fila) => fila.categoria.replace('Bethesda ', '');
+    const distribucionBethesda = { ...estadisticas.porBethesda, filas: estadisticas.porBethesda.filas.map((fila) => ({ ...fila, categoria: `Bethesda ${fila.categoria}` })) };
+    dibujarDistribucion('bethesda', distribucionBethesda, {
+      obtenerColor: (fila) => colorPorNivel(NIVEL_BETHESDA[romano(fila)], 5, 3),
+      obtenerDescripcion: (fila) => DESCRIPCION_BETHESDA[romano(fila)] || ''
     });
-    const totalBethesda = sumarCantidades(filasBethesda);
-    const sospechosas = filasBethesda.filter((fila) => nivelBethesda[romanoBethesda(fila)] >= 5).reduce((suma, fila) => suma + fila.cantidad, 0);
-    escribirConclusion('bethesda', describirProporcionSobreConDato(sospechosas, totalBethesda, 'Sospechosas o malignas (Bethesda V y VI)'));
+    const sospechosas = sumarCategorias(distribucionBethesda, (fila) => NIVEL_BETHESDA[romano(fila)] >= 5);
+    escribirTexto('conclusion-bethesda', distribucionBethesda.conDato ? `Sospechosas o malignas (Bethesda V y VI): ${formatoNumero.format(sospechosas)} de ${formatoNumero.format(distribucionBethesda.conDato)} punciones informadas (${calcularPorcentaje(sospechosas, distribucionBethesda.conDato)}).` : '');
   }
 
   function renderizarAntecedentes(estadisticas) {
-    Graficos.dibujarLeyenda(elemento('leyenda-antecedentes'), Object.entries(COLORES_SI_NO).filter(([nombre]) => nombre !== 'Sin dato').map(([nombre, color]) => ({ nombre, color })));
-    Graficos.dibujarProporciones(elemento('grafico-antecedentes'), estadisticas.antecedentes, {
-      colores: COLORES_SI_NO,
-      coloresTexto: TEXTO_SIN_DATO,
-      describirGrupo: (nombre, conteo) => {
-        const conDato = conteo['Sí'] + conteo.No;
-        return conDato ? `${formatoNumero.format(conteo['Sí'])} de ${formatoNumero.format(conDato)} con el dato (${calcularPorcentaje(conteo['Sí'], conDato)})` : 'Ningún informe trae el dato';
-      }
-    });
+    Graficos.dibujarLeyenda(elemento('leyenda-antecedentes'), Object.entries(COLORES_SI_NO).map(([nombre, color]) => ({ nombre, color })));
+    Graficos.dibujarProporciones(elemento('grafico-antecedentes'), estadisticas.antecedentes, { colores: COLORES_SI_NO, describirGrupo: describirSiNo, unidad: UNIDAD });
     const familiar = estadisticas.antecedentes['Antecedente familiar tiroideo'];
-    escribirConclusion('antecedentes', describirProporcionSobreConDato(familiar['Sí'], familiar['Sí'] + familiar.No, 'Tienen familiares con enfermedad tiroidea'));
+    const conDato = familiar['Sí'] + familiar.No;
+    escribirTexto('conclusion-antecedentes', conDato ? `Tienen familiares con enfermedad tiroidea: ${formatoNumero.format(familiar['Sí'])} de ${formatoNumero.format(conDato)} tratamientos con el dato (${calcularPorcentaje(familiar['Sí'], conDato)}).` : '');
+    escribirTexto('cobertura-antecedentes', '');
   }
 
   function renderizarGraficos(estadisticas, umbrales) {
-    renderizarAnios(estadisticas);
+    renderizarPorAnio(estadisticas);
+    renderizarCancerPorAnio(estadisticas);
     renderizarDistribuciones(estadisticas);
     renderizarExamenes(estadisticas, umbrales);
     renderizarImagenesYPuncion(estadisticas);

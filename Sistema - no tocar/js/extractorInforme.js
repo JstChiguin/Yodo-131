@@ -161,7 +161,9 @@
     const riesgo = (textoClinico.match(/riesgo\s+(bajo|intermedio|alto)|(bajo|intermedio|alto)\s+riesgo/i) || []).slice(1).find(Boolean);
 
     return {
+      origen: 'Word',
       archivo: nombreArchivo,
+      referencia: nombreArchivo,
       nombrePaciente: capitalizarNombre(textoTrasEtiqueta(lineas, /^NOMBRE\s*:/i) || ''),
       rut: normalizarRut(textoTrasEtiqueta(lineas.slice(0, indiceFecha >= 0 ? indiceFecha + 1 : 4), /^RUT\s*:/i)),
       edad: convertirNumero((textoTrasEtiqueta(lineas, /^EDAD\s*:/i) || '').match(/\d{1,3}/)?.[0]),
@@ -198,5 +200,5 @@
     };
   }
 
-  ns.ExtractorInforme = { dividirEnInformes, extraerInforme, evaluarPresencia, interpretarFecha, normalizarRut };
+  ns.ExtractorInforme = { dividirEnInformes, extraerInforme, evaluarPresencia, interpretarFecha, normalizarRut, capitalizarNombre, convertirNumero };
 })(globalThis.LectorYodo = globalThis.LectorYodo || {});

@@ -12,18 +12,35 @@
     ['Control endocrinológico sin detalle', /control/i]
   ];
 
-  function determinarSexo(informe) {
-    if (informe.tieneDatosGinecologicos) return { sexo: 'F', origenSexo: 'Datos gineco-obstétricos' };
+  function determinarSexoExplicito(informe) {
+    if (informe.sexoRegistrado) return { sexoExplicito: informe.sexoRegistrado, origenSexoExplicito: 'Registrado en Excel' };
+    if (informe.tieneDatosGinecologicos) return { sexoExplicito: 'F', origenSexoExplicito: 'Datos gineco-obstétricos' };
+    return { sexoExplicito: null, origenSexoExplicito: null };
+  }
+
+  function determinarSexoInferido(informe) {
     const primerNombre = (informe.nombrePaciente || '').split(' ')[0]?.toLowerCase();
-    if (NOMBRES_FEMENINOS.has(primerNombre)) return { sexo: 'F', origenSexo: 'Nombre' };
-    if (NOMBRES_MASCULINOS.has(primerNombre)) return { sexo: 'M', origenSexo: 'Nombre' };
-    if (/\b(derivada|la paciente|paciente femenina|operada)\b/i.test(informe.textoNarrativa)) return { sexo: 'F', origenSexo: 'Texto del informe' };
-    if (/\b(derivado|operado)\b|(^|\s)él(\s|[,.])/i.test(informe.textoNarrativa)) return { sexo: 'M', origenSexo: 'Texto del informe' };
-    return { sexo: null, origenSexo: 'Sin dato' };
+    if (NOMBRES_FEMENINOS.has(primerNombre)) return { sexoInferido: 'F', origenSexoInferido: 'Nombre' };
+    if (NOMBRES_MASCULINOS.has(primerNombre)) return { sexoInferido: 'M', origenSexoInferido: 'Nombre' };
+    if (/\b(derivada|la paciente|paciente femenina|operada)\b/i.test(informe.textoNarrativa || '')) return { sexoInferido: 'F', origenSexoInferido: 'Texto del informe' };
+    if (/\b(derivado|operado)\b|(^|\s)él(\s|[,.])/i.test(informe.textoNarrativa || '')) return { sexoInferido: 'M', origenSexoInferido: 'Texto del informe' };
+    return { sexoInferido: null, origenSexoInferido: null };
+  }
+
+  function determinarSexo(informe) {
+    const explicito = determinarSexoExplicito(informe);
+    const inferido = determinarSexoInferido(informe);
+    return {
+      ...explicito,
+      ...inferido,
+      sexo: explicito.sexoExplicito ?? inferido.sexoInferido,
+      origenSexo: explicito.origenSexoExplicito ?? inferido.origenSexoInferido ?? 'Sin dato'
+    };
   }
 
   function clasificarDiagnostico(textoClinico) {
-    if (/carcinoma|c[aá]ncer\s+(papilar|folicular|medular|de(l)?\s+tiroides|tiroideo)|comit[eé]\s+onc/i.test(textoClinico)) return 'Cáncer de tiroides';
+    if (!textoClinico || !textoClinico.trim()) return null;
+    if (/carcinoma|c[aá]ncer\s+(papilar|folicular|medular|de(l)?\s+tiroides|tiroideo)|comit[eé]\s+onc|^\s*ca\.?\s/i.test(textoClinico)) return 'Cáncer de tiroides';
     if (/multinodular|n[oó]dulo\s+(hiperfuncionante|caliente|t[oó]xico)/i.test(textoClinico)) return 'Bocio multinodular o nódulo hiperfuncionante';
     if (/graves|bocio difuso|hipertiroidismo|\btrab\b|thyrozol|tiamazol|tsh frenada/i.test(textoClinico)) return 'Hipertiroidismo (Graves / bocio difuso)';
     return 'Otro / no determinado';
@@ -43,7 +60,7 @@
   }
 
   function clasificarMotivo(textoNarrativa) {
-    if (!textoNarrativa) return 'Sin motivo escrito';
+    if (!textoNarrativa || !textoNarrativa.trim()) return null;
     const categoria = CATEGORIAS_MOTIVO.find(([, patron]) => patron.test(textoNarrativa));
     return categoria ? categoria[0] : 'Otro';
   }
@@ -121,7 +138,7 @@
   }
 
   function agruparEdad(edad) {
-    if (edad == null) return 'Sin dato';
+    if (edad == null) return null;
     if (edad < 20) return '<20';
     if (edad >= 70) return '70+';
     const decada = Math.floor(edad / 10) * 10;
@@ -129,7 +146,7 @@
   }
 
   function agruparDosis(dosisMci) {
-    if (dosisMci == null) return 'Sin dato';
+    if (dosisMci == null) return null;
     if (dosisMci <= 30) return 'Baja (≤30 mCi)';
     if (dosisMci < 100) return 'Intermedia (31–99 mCi)';
     return 'Alta (≥100 mCi)';
@@ -169,5 +186,5 @@
     return registro;
   }
 
-  ns.Clasificador = { clasificarInforme, unificarMedicos, limpiarNombreMedico, UMBRALES_POR_DEFECTO };
+  ns.Clasificador = { clasificarInforme, unificarMedicos, limpiarNombreMedico, agruparEdad, agruparDosis, listarCamposFaltantes, UMBRALES_POR_DEFECTO };
 })(globalThis.LectorYodo = globalThis.LectorYodo || {});

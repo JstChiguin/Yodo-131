@@ -41,13 +41,13 @@
 
       <section class="seccion" id="seccion-bienvenida">
         <div class="bienvenida" id="zona-soltar">
-          <h2>Elija la carpeta donde guarda los informes de yodo</h2>
+          <h2>Elija la carpeta con los informes Word y las planillas Excel</h2>
           <ol class="pasos">
             <li>Conecte el pendrive.</li>
-            <li>Haga clic en <strong>Elegir carpeta de informes</strong> y seleccione la carpeta con los Word.</li>
+            <li>Haga clic en <strong>Elegir carpeta de informes</strong> y seleccione la carpeta con los Word y, si los tiene, los Excel de yodo 131 y de cáncer de tiroides.</li>
             <li>Los gráficos aparecen solos. Si agrega informes nuevos, repita el paso 2.</li>
           </ol>
-          <p class="nota">También puede arrastrar la carpeta a este recuadro. El programa solo lee los Word: no modifica ni borra ninguno.</p>
+          <p class="nota">También puede arrastrar la carpeta a este recuadro. El programa solo lee los archivos: no modifica ni borra ninguno.</p>
           <label class="boton boton-principal boton-grande" for="selector-carpeta">Elegir carpeta de informes</label>
         </div>
       </section>
@@ -71,35 +71,49 @@
         <div class="grilla">
           <article class="tarjeta tarjeta-ancha" id="tarjeta-anios">
             <div class="tarjeta-encabezado">
-              <h3>Informes por año, según sexo</h3>
-              <p class="nota">Cada barra es un año. El número sobre la barra es el total; dentro se ve cuántos son mujeres y hombres.</p>
+              <h3>Tratamientos con yodo 131 por año, según sexo</h3>
+              <p class="nota">Cada barra es un año. Una persona tratada dos veces cuenta dos tratamientos; un mismo tratamiento registrado en varios archivos cuenta una sola vez.</p>
             </div>
             <p class="conclusion" id="conclusion-anios"></p>
+            <p class="cobertura" id="cobertura-anios"></p>
             <div class="leyenda" id="leyenda-anios"></div>
             <div class="grafico" id="grafico-anios"></div>
+          </article>
+          <article class="tarjeta tarjeta-ancha" id="tarjeta-cancer">
+            <div class="tarjeta-encabezado">
+              <h3>Pacientes con cáncer de tiroides por año</h3>
+              <p class="nota">Cada paciente se cuenta una vez, en el año de su primer registro de cáncer (registro C73, informe o planilla de yodo).</p>
+            </div>
+            <p class="conclusion" id="conclusion-cancer"></p>
+            <p class="cobertura" id="cobertura-cancer"></p>
+            <div class="leyenda" id="leyenda-cancer"></div>
+            <div class="grafico" id="grafico-cancer"></div>
           </article>
           <article class="tarjeta" id="tarjeta-diagnostico">
             <div class="tarjeta-encabezado">
               <h3>Diagnóstico</h3>
-              <p class="nota">Diagnóstico principal de cada informe.</p>
+              <p class="nota">Diagnóstico de cada tratamiento.</p>
             </div>
             <p class="conclusion" id="conclusion-diagnostico"></p>
+            <p class="cobertura" id="cobertura-diagnostico"></p>
             <div class="grafico" id="grafico-diagnostico"></div>
           </article>
           <article class="tarjeta" id="tarjeta-motivo">
             <div class="tarjeta-encabezado">
               <h3>Motivo de consulta</h3>
-              <p class="nota">Por qué consultó el paciente, según lo que describe el informe.</p>
+              <p class="nota">Por qué consultó el paciente, según el informe.</p>
             </div>
             <p class="conclusion" id="conclusion-motivo"></p>
+            <p class="cobertura" id="cobertura-motivo"></p>
             <div class="grafico" id="grafico-motivo"></div>
           </article>
           <article class="tarjeta" id="tarjeta-edad">
             <div class="tarjeta-encabezado">
               <h3>Edad</h3>
-              <p class="nota">Edad del paciente en el informe, en rangos de 10 años.</p>
+              <p class="nota">Edad del paciente en cada tratamiento, en rangos de 10 años.</p>
             </div>
             <p class="conclusion" id="conclusion-edad"></p>
+            <p class="cobertura" id="cobertura-edad"></p>
             <div class="grafico" id="grafico-edad"></div>
           </article>
           <article class="tarjeta" id="tarjeta-dosis">
@@ -108,6 +122,7 @@
               <p class="nota">Las dosis bajas suelen usarse en hipertiroidismo; las altas, en el tratamiento del cáncer.</p>
             </div>
             <p class="conclusion" id="conclusion-dosis"></p>
+            <p class="cobertura" id="cobertura-dosis"></p>
             <div class="grafico" id="grafico-dosis"></div>
           </article>
           <article class="tarjeta tarjeta-ancha" id="tarjeta-examenes">
@@ -116,6 +131,7 @@
               <p class="nota"><span id="nota-umbrales"></span></p>
             </div>
             <p class="conclusion" id="conclusion-examenes"></p>
+            <p class="cobertura" id="cobertura-examenes"></p>
             <div class="leyenda" id="leyenda-examenes"></div>
             <div class="grafico" id="grafico-examenes"></div>
           </article>
@@ -125,6 +141,7 @@
               <p class="nota">Clasificación TI-RADS de la ecografía: a mayor número, mayor sospecha de cáncer.</p>
             </div>
             <p class="conclusion" id="conclusion-tirads"></p>
+            <p class="cobertura" id="cobertura-tirads"></p>
             <div class="grafico" id="grafico-tirads"></div>
             <div class="grafico-secundario" id="grafico-eco"></div>
           </article>
@@ -134,32 +151,45 @@
               <p class="nota">Resultado de la punción (PAAF): a mayor número, mayor sospecha de cáncer.</p>
             </div>
             <p class="conclusion" id="conclusion-bethesda"></p>
+            <p class="cobertura" id="cobertura-bethesda"></p>
             <div class="grafico" id="grafico-bethesda"></div>
           </article>
           <article class="tarjeta" id="tarjeta-histologia">
             <div class="tarjeta-encabezado">
               <h3>Tipo de cáncer de tiroides</h3>
-              <p class="nota">Según biopsia o punción, solo en los informes con cáncer.</p>
+              <p class="nota">Según biopsia o punción, solo en los tratamientos con cáncer.</p>
             </div>
             <p class="conclusion" id="conclusion-histologia"></p>
+            <p class="cobertura" id="cobertura-histologia"></p>
             <div class="grafico" id="grafico-histologia"></div>
           </article>
           <article class="tarjeta" id="tarjeta-antecedentes">
             <div class="tarjeta-encabezado">
               <h3>Antecedentes</h3>
-              <p class="nota">Sobre los informes que traen el dato.</p>
+              <p class="nota">Antecedente familiar de enfermedad tiroidea y tabaquismo.</p>
             </div>
             <p class="conclusion" id="conclusion-antecedentes"></p>
+            <p class="cobertura" id="cobertura-antecedentes"></p>
             <div class="leyenda" id="leyenda-antecedentes"></div>
             <div class="grafico" id="grafico-antecedentes"></div>
           </article>
           <article class="tarjeta" id="tarjeta-medico">
             <div class="tarjeta-encabezado">
               <h3>Médico tratante</h3>
-              <p class="nota">Informes por médico tratante.</p>
+              <p class="nota">Tratamientos por médico tratante.</p>
             </div>
             <p class="conclusion" id="conclusion-medico"></p>
+            <p class="cobertura" id="cobertura-medico"></p>
             <div class="grafico" id="grafico-medico"></div>
+          </article>
+          <article class="tarjeta" id="tarjeta-origen">
+            <div class="tarjeta-encabezado">
+              <h3>Origen de los datos</h3>
+              <p class="nota">De dónde sale cada tratamiento: informe Word, planilla Excel o ambos unidos.</p>
+            </div>
+            <p class="conclusion" id="conclusion-origen"></p>
+            <p class="cobertura" id="cobertura-origen"></p>
+            <div class="grafico" id="grafico-origen"></div>
           </article>
         </div>
       </section>
@@ -182,6 +212,7 @@
                 <th><button type="button" data-orden="dosisMci">Dosis</button></th>
                 <th><button type="button" data-orden="tirads">TIRADS</button></th>
                 <th><button type="button" data-orden="bethesda">Bethesda</button></th>
+                <th>Fuente</th>
                 <th>Exámenes</th>
                 <th>Revisar</th>
               </tr>
@@ -189,13 +220,18 @@
             <tbody></tbody>
           </table>
         </div>
-        <p class="nota">Haga clic en una fila para ver el texto que se leyó del informe.</p>
+        <p class="nota">Cada fila es un tratamiento. Haga clic en una fila para ver de qué archivos salió y el texto que se leyó.</p>
       </section>
 
       <section class="seccion" id="seccion-revisar" hidden>
         <article class="tarjeta">
-          <h3>Informes con datos que faltan</h3>
-          <p class="nota">El programa no inventa datos: si algo no está escrito en el Word, aparece aquí. Se corrige en el Word y se vuelve a elegir la carpeta.</p>
+          <h3>Datos que no coinciden entre fuentes</h3>
+          <p class="nota">Cuando el Word y el Excel (o dos registros del mismo tratamiento) dicen cosas distintas, el programa no elige por su cuenta: el dato queda fuera de los gráficos hasta que se corrija en el archivo de origen.</p>
+          <ul class="lista-revisar" id="lista-conflictos"></ul>
+        </article>
+        <article class="tarjeta">
+          <h3>Tratamientos con datos que faltan</h3>
+          <p class="nota">El programa no inventa datos: si algo no está en el Word ni en el Excel, aparece aquí. Se corrige en el archivo de origen y se vuelve a elegir la carpeta.</p>
           <ul class="lista-revisar" id="lista-faltantes"></ul>
         </article>
         <article class="tarjeta">
@@ -248,9 +284,13 @@
 
   <script src="js/version.js"></script>
   <script src="js/registroErrores.js"></script>
+  <script src="js/lectorZip.js"></script>
   <script src="js/lectorDocx.js"></script>
+  <script src="js/lectorXlsx.js"></script>
   <script src="js/extractorInforme.js"></script>
+  <script src="js/extractorExcel.js"></script>
   <script src="js/clasificador.js"></script>
+  <script src="js/fusionTratamientos.js"></script>
   <script src="js/procesadorInformes.js"></script>
   <script src="js/estadisticas.js"></script>
   <script src="js/exportadorExcel.js"></script>
