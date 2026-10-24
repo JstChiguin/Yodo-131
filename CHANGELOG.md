@@ -2,6 +2,11 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y [versionado semántico](https://semver.org/lang/es/).
 
+## [1.5.0] - 2026-10-24
+
+### Agregado
+- Modo presentación más interactivo: al pasar el mouse, cada tarjeta se eleva y se marca con el color principal. En los gráficos, la barra señalada queda destacada y las demás del mismo gráfico se atenúan; en el gráfico por año se destaca la columna completa. Respeta la preferencia de reducir movimiento del sistema.
+
 ## [1.4.0] - 2026-10-24
 
 ### Agregado
