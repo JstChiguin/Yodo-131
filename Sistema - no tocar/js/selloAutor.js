@@ -37,14 +37,27 @@
 
   function restaurarFirma(contenedorRaiz) {
     const actual = document.getElementById(ID_FIRMA);
-    if (firmaEstaIntacta(actual)) return;
+    if (firmaEstaIntacta(actual)) return true;
     actual?.remove();
-    contenedorRaiz.appendChild(crearFirma());
+    const firmaNueva = crearFirma();
+    contenedorRaiz.appendChild(firmaNueva);
+    return firmaEstaIntacta(firmaNueva);
+  }
+
+  function avisarFirmaNoVisible() {
+    console.warn('[SelloAutor] La firma by Chiguin no queda visible ni después de recrearla; revise los estilos. La aplicación sigue funcionando.');
   }
 
   function montarSello(contenedorRaiz) {
-    restaurarFirma(contenedorRaiz);
-    const observador = new MutationObserver(() => restaurarFirma(contenedorRaiz));
+    if (!restaurarFirma(contenedorRaiz)) {
+      avisarFirmaNoVisible();
+      return;
+    }
+    const observador = new MutationObserver(() => {
+      if (restaurarFirma(contenedorRaiz)) return;
+      observador.disconnect();
+      avisarFirmaNoVisible();
+    });
     observador.observe(contenedorRaiz, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['style', 'class', 'hidden', 'id'] });
   }
 
