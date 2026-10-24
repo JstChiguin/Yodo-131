@@ -24,9 +24,9 @@ test('la página carga la versión y el sello antes de iniciar la aplicación', 
 });
 
 test('el sello conserva el texto exacto y se monta en la raíz de la aplicación', () => {
-  assert.ok(leerArchivo('Sistema - no tocar/js/selloAutor.js').includes("const TEXTO_SELLO = 'by Chiguin';"));
-  assert.ok(leerArchivo('Sistema - no tocar/js/app.js').includes("SelloAutor.montarSello(elemento('app'))"));
+  assert.ok(leerArchivo('Sistema - no tocar/js/selloAutor.js').includes("const TEXTO_SELLO = 'by Chiguin';"), 'FIRMA DE AUTOR ALTERADA: selloAutor.js debe definir TEXTO_SELLO exactamente como \'by Chiguin\'.');
+  assert.ok(leerArchivo('Sistema - no tocar/js/app.js').includes("SelloAutor.montarSello(elemento('app'))"), 'FIRMA DE AUTOR ALTERADA: app.js ya no monta la firma en la raíz de la aplicación (#app).');
   const estilos = leerArchivo('Sistema - no tocar/css/estilos.css');
-  assert.match(estilos, /\.firma-autor\s*\{[^}]*position:\s*fixed/);
-  assert.match(estilos, /\.firma-autor\s*\{[^}]*pointer-events:\s*none/);
+  assert.match(estilos, /\.firma-autor\s*\{[^}]*position:\s*fixed/, 'FIRMA DE AUTOR ALTERADA: .firma-autor debe ser flotante (position: fixed).');
+  assert.match(estilos, /\.firma-autor\s*\{[^}]*pointer-events:\s*none/, 'FIRMA DE AUTOR ALTERADA: .firma-autor debe tener pointer-events: none para no tapar botones.');
 });

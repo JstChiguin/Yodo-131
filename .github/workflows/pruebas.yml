@@ -1,0 +1,29 @@
+name: Pruebas
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  pruebas:
+    name: Extracción y firma de autor
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obtener el código
+        uses: actions/checkout@v4
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependencias de prueba
+        run: npm ci
+
+      - name: Instalar Chromium para las pruebas en navegador
+        run: npx playwright install --with-deps chromium
+
+      - name: Ejecutar pruebas (incluye la integridad de la firma by Chiguin)
+        run: npm test
