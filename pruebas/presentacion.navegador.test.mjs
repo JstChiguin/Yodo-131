@@ -64,6 +64,18 @@ test('el modo presentación oculta lo que solo debe ver la doctora y se puede de
     assert.ok(await pagina.locator('#boton-presentacion').isVisible());
     assert.equal(await pagina.locator('#boton-presentacion').textContent(), 'Salir de presentación');
 
+    const cifra = pagina.locator('#cifras .cifra').first();
+    await cifra.hover();
+    await pagina.waitForTimeout(300);
+    assert.notEqual(await cifra.evaluate((nodo) => getComputedStyle(nodo).transform), 'none', 'la tarjeta bajo el mouse se resalta');
+
+    const barras = pagina.locator('#grafico-diagnostico .barra-fila.marca');
+    await barras.first().hover();
+    await pagina.waitForTimeout(300);
+    const opacidades = await barras.evaluateAll((filas) => filas.map((fila) => Number(getComputedStyle(fila).opacity)));
+    assert.equal(opacidades[0], 1, 'la barra bajo el mouse queda destacada');
+    assert.ok(opacidades.slice(1).every((opacidad) => opacidad < 1), 'las demás barras del gráfico se atenúan');
+
     await pagina.click('#boton-presentacion');
     assert.deepEqual(await listarVisibles(pagina, ['.pestana[data-seccion="revisar"]', '#contador-revisar', '#boton-excel']), ['.pestana[data-seccion="revisar"]', '#contador-revisar', '#boton-excel']);
     assert.match(await obtenerTextoCifras(pagina), /Datos que no coinciden/);
