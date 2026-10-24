@@ -63,10 +63,11 @@ button, input { font: inherit; color: inherit; }
 .boton-grande { min-height: 52px; font-size: 16px; padding-inline: 28px; justify-self: start; }
 .boton-texto { border-color: transparent; background: transparent; color: var(--acento); }
 
-.pestanas { display: flex; gap: 4px; border-bottom: 1px solid var(--borde); overflow-x: auto; }
+.pestanas { display: flex; gap: 4px; box-shadow: inset 0 -1px 0 var(--borde); overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+.pestanas::-webkit-scrollbar { display: none; }
 .pestana {
   border: 0; background: none; padding: 10px 14px; cursor: pointer; color: var(--texto-suave); font-weight: 600;
-  border-bottom: 3px solid transparent; margin-bottom: -1px; white-space: nowrap;
+  border-bottom: 3px solid transparent; white-space: nowrap; flex: none;
 }
 .pestana.activa { color: var(--texto); border-bottom-color: var(--acento); }
 .pestana:disabled { opacity: .4; cursor: not-allowed; }

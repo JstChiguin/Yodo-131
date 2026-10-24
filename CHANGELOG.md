@@ -2,6 +2,11 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y [versionado semántico](https://semver.org/lang/es/).
 
+## [1.2.1] - 2026-10-24
+
+### Corregido
+- La fila de pestañas mostraba una barra de desplazamiento vertical sin utilidad en Windows. La causa era que la línea de la pestaña activa sobresalía 1 píxel. En celular las pestañas se siguen deslizando de lado, sin barra visible.
+
 ## [1.2.0] - 2026-10-24
 
 ### Agregado
