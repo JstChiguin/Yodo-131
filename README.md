@@ -14,6 +14,8 @@ Nació para resolver un problema real en un servicio de Medicina Interna: la end
 2. El programa abre cada `.docx`, encuentra los informes (un Word puede traer varios) y extrae los datos del texto.
 3. Muestra gráficos, una tabla de pacientes y una lista de datos por revisar; con un botón descarga el Excel.
 
+Cada gráfico explica qué muestra, destaca su conclusión principal (por ejemplo, el diagnóstico más frecuente y su porcentaje) e indica cantidad y porcentaje en cada barra. TIRADS y Bethesda muestran el significado de cada categoría. Al pasar el mouse por una barra aparece el detalle. Hay un botón para alternar entre modo claro y oscuro; el programa siempre abre en modo claro.
+
 Datos que obtiene de cada informe:
 
 | Grupo | Campos |
@@ -69,7 +71,9 @@ Sistema - no tocar/
     configuracion.js             umbrales guardados en el navegador
     seguridad.js                 verificación de la clave de mantenimiento
     registroErrores.js           registro centralizado de errores
-    graficos.js                  gráficos SVG
+    graficos.js                  componentes de gráficos (barras, proporciones, detalle al pasar el mouse)
+    vistaResumen.js              arma la pestaña Gráficos: conclusiones, colores y significado de TIRADS/Bethesda
+    tema.js                      modo claro / oscuro
     selloAutor.js                firma «by Chiguin» y versión, fijas en pantalla
     app.js                       interfaz y eventos
 ejemplos/                        informes ficticios para probar

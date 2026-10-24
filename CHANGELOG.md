@@ -2,6 +2,20 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y [versionado semántico](https://semver.org/lang/es/).
 
+## [1.1.0] - 2026-10-24
+
+### Agregado
+- Botón para cambiar entre modo claro y oscuro. El programa siempre abre en modo claro.
+- Cada gráfico tiene una explicación de lo que muestra y una conclusión destacada (por ejemplo, el diagnóstico más frecuente y su porcentaje).
+- Cantidad y porcentaje en todas las barras; eje con líneas guía y números dentro de cada segmento en el gráfico por año.
+- Significado de cada categoría de TIRADS y Bethesda junto a su barra.
+- Detalle al pasar el mouse o al recorrer los gráficos con el teclado.
+
+### Cambiado
+- Las etiquetas de las barras se muestran completas sobre la barra, en vez de cortarse.
+- Las barras de exámenes, ecografía y antecedentes se calculan sobre los informes que traen el dato; los "Sin dato" se informan aparte.
+- El modo oscuro ya no depende de la configuración del sistema operativo.
+
 ## [1.0.0] - 2026-10-24
 
 ### Agregado
