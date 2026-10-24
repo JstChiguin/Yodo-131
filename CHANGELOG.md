@@ -2,6 +2,17 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y [versionado semántico](https://semver.org/lang/es/).
 
+## [1.3.0] - 2026-10-24
+
+### Agregado
+- Botón «Agregar otra carpeta»: después de cargar una carpeta se pueden sumar otras (por ejemplo, una con los Word y otra con los Excel) y todo se analiza en conjunto, cruzando pacientes y tratamientos entre carpetas.
+- Un archivo que ya estaba cargado no se vuelve a contar, aunque se elija de nuevo o esté copiado en otra carpeta con el mismo nombre y tamaño. El programa avisa cuántos se omitieron.
+- Botón «Empezar de nuevo» para quitar todo lo cargado.
+- Línea con las carpetas cargadas y cuántos archivos Word y Excel aporta cada una.
+
+### Cambiado
+- Antes, elegir una segunda carpeta reemplazaba a la primera.
+
 ## [1.2.1] - 2026-10-24
 
 ### Corregido

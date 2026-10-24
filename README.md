@@ -12,7 +12,7 @@ Nació para resolver un problema real en un servicio de Medicina Interna: la end
 
 ## Qué hace
 
-1. La usuaria elige la carpeta de informes (o la arrastra a la ventana). Puede contener informes Word y planillas Excel.
+1. La usuaria elige la carpeta de informes (o la arrastra a la ventana). Puede contener informes Word y planillas Excel. Si están en carpetas distintas, usa «Agregar otra carpeta» y todo se analiza en conjunto; un archivo ya cargado no se cuenta dos veces.
 2. El programa lee cada archivo:
    - **Informes Word (`.docx`):** un archivo puede traer varios informes;
    - **planilla de yodo 131 (`.xlsx`):** una hoja por año;

@@ -8,7 +8,11 @@ CÓMO USARLO
    (y, si quiere, los Excel de yodo 131 y de cáncer de tiroides).
 4. Listo: aparecen los gráficos. Con "Descargar Excel" se baja una planilla con todos los datos.
 
-Cada vez que agregue informes nuevos, repita el paso 3.
+Si los Word y los Excel están en carpetas distintas, después de la primera use
+"Agregar otra carpeta": se suman y se analizan juntos. Un archivo ya cargado no
+se cuenta dos veces. "Empezar de nuevo" quita todo lo cargado.
+
+Cada vez que agregue informes nuevos, vuelva a abrir el programa y elija las carpetas.
 
 Si una misma persona aparece en el Word y en el Excel, el programa la cuenta una vez
 por tratamiento. Si los datos no coinciden, aparece en la pestaña "Por revisar".
