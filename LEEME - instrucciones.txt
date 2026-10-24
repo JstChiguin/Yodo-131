@@ -4,18 +4,22 @@ LECTOR YODO 131
 CÓMO USARLO
 1. Conecte el pendrive.
 2. Abra el archivo "ABRIR LECTOR YODO 131" (doble clic). Se abre en Chrome o Edge.
-3. Haga clic en "Elegir carpeta de informes" y elija la carpeta donde guarda los Word.
+3. Haga clic en "Elegir carpeta de informes" y elija la carpeta donde guarda los Word
+   (y, si quiere, los Excel de yodo 131 y de cáncer de tiroides).
 4. Listo: aparecen los gráficos. Con "Descargar Excel" se baja una planilla con todos los datos.
 
 Cada vez que agregue informes nuevos, repita el paso 3.
 
+Si una misma persona aparece en el Word y en el Excel, el programa la cuenta una vez
+por tratamiento. Si los datos no coinciden, aparece en la pestaña "Por revisar".
+
 IMPORTANTE
-- El programa solo LEE los Word. No modifica ni borra ninguno.
+- El programa solo LEE los archivos. No modifica ni borra ninguno.
 - No necesita internet. Los datos no salen del computador.
 - No borre ni mueva la carpeta "Sistema - no tocar".
 - Si un dato no está escrito en el Word, el programa no lo puede adivinar:
   aparece en la pestaña "Por revisar".
-- Los Word antiguos (.doc) hay que abrirlos en Word y usar "Guardar como" .docx.
+- Los Word antiguos (.doc) y Excel antiguos (.xls) hay que abrirlos y usar "Guardar como" .docx / .xlsx.
 
 Para que los gráficos de exámenes salgan más completos, conviene que la plantilla
 del informe tenga estas líneas, cada una en su propia línea:

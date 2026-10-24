@@ -2,33 +2,53 @@
 
 [![Pruebas](https://github.com/JstChiguin/Yodo131/actions/workflows/pruebas.yml/badge.svg)](https://github.com/JstChiguin/Yodo131/actions/workflows/pruebas.yml)
 
-Herramienta **offline** que lee los informes de solicitud de yodoterapia (yodo 131) escritos en Word y los convierte en **gráficos y una planilla Excel**, sin que nadie tenga que transcribir datos.
+Herramienta **offline** que lee los informes de solicitud de yodoterapia (yodo 131) escritos en Word y las planillas Excel históricas, y los convierte en **gráficos y una planilla Excel consolidada**, sin que nadie tenga que transcribir datos.
 
 Nació para resolver un problema real en un servicio de Medicina Interna: la endocrinóloga redacta un informe Word por paciente y necesitaba estadísticas (edad, sexo, motivo de consulta, resultados de exámenes, frecuencia de cáncer de tiroides) sin tener que llenar planillas. El programa vive en su pendrive, se abre con doble clic y se actualiza solo cada vez que se agregan informes.
 
-> **Privacidad:** este repositorio no contiene datos de pacientes. Los informes de la carpeta `ejemplos/` y las capturas son ficticios.
+> **Privacidad:** este repositorio no contiene datos de pacientes. Los informes y planillas de la carpeta `ejemplos/` y las capturas son ficticios.
 
 ![Gráficos generados a partir de informes ficticios](docs/capturas/graficos.png)
 
 ## Qué hace
 
-1. La usuaria elige la carpeta de informes (o la arrastra a la ventana).
-2. El programa abre cada `.docx`, encuentra los informes (un Word puede traer varios) y extrae los datos del texto.
-3. Muestra gráficos, una tabla de pacientes y una lista de datos por revisar; con un botón descarga el Excel.
+1. La usuaria elige la carpeta de informes (o la arrastra a la ventana). Puede contener informes Word y planillas Excel.
+2. El programa lee cada archivo:
+   - **Informes Word (`.docx`):** un archivo puede traer varios informes;
+   - **planilla de yodo 131 (`.xlsx`):** una hoja por año;
+   - **registro de cáncer de tiroides C73 (`.xlsx`):** se reconoce por su contenido.
+3. Agrupa los registros en pacientes y tratamientos, combina las fuentes y marca las discrepancias.
+4. Muestra gráficos, una tabla de tratamientos y una lista de datos por revisar. Con un botón descarga el Excel consolidado.
 
-Cada gráfico explica qué muestra, destaca su conclusión principal (por ejemplo, el diagnóstico más frecuente y su porcentaje) e indica cantidad y porcentaje en cada barra. TIRADS y Bethesda muestran el significado de cada categoría. Al pasar el mouse por una barra aparece el detalle. Hay un botón para alternar entre modo claro y oscuro; el programa siempre abre en modo claro.
+### Pacientes, tratamientos y registros repetidos
 
-Datos que obtiene de cada informe:
-
-| Grupo | Campos |
+| Concepto | Cómo se cuenta |
 |---|---|
-| Paciente | nombre, RUT, edad, sexo (inferido, con su origen), fecha |
-| Consulta | motivo (texto y categoría), médico tratante, dosis de yodo 131, rechazo del tratamiento |
-| Diagnóstico | cáncer de tiroides / hipertiroidismo / bocio multinodular, tipo histológico, estadificación y riesgo |
-| Imágenes | ecografía (TIRADS, nódulos, adenopatías), cintigrama |
-| Punción | resultado y categoría Bethesda |
-| Laboratorio | TSH, T4L, T3, TRAb, tiroglobulina, anti-tiroglobulina, anti-TPO, con estado normal / elevado |
-| Antecedentes | familiares tiroideos, mórbidos, tabaco, alcohol, drogas |
+| **Paciente único** | Una persona cuenta una vez. Se identifica por RUT o, si falta, por nombre. |
+| **Tratamiento** | Paciente + fecha. Una persona tratada en 2019 y en 2023 tiene dos tratamientos. |
+| **Registro repetido** | Dos registros del mismo paciente con 60 días o menos de diferencia (por ejemplo, el Word y la fila del Excel, o dos filas del Excel) son el mismo tratamiento y cuentan una sola vez. |
+
+### Combinación de fuentes sin decidir en silencio
+
+Si el Word y el Excel describen el mismo tratamiento, se conserva lo que aporta cada uno; por ejemplo, la fecha del Excel y el diagnóstico y los exámenes del Word. Si se contradicen (dosis, edad, médico, diagnóstico, antecedentes o sexo), el programa **no elige**: el dato queda fuera de los gráficos y aparece en *Por revisar* con el valor y la ubicación de cada fuente. También avisa cuando un mismo RUT aparece con nombres distintos.
+
+### Cobertura de cada dato
+
+No es lo mismo un examen normal que un examen que nunca se registró. Cada gráfico indica la cobertura (por ejemplo: *"Dato disponible en 40 de 100 tratamientos (40%). Sin dato: 60 (60%)"*) y calcula los porcentajes solo sobre los que tienen el dato.
+
+Datos que se obtienen:
+
+| Grupo | Word | Excel yodo 131 | Registro C73 |
+|---|---|---|---|
+| Paciente: nombre, RUT, edad, fecha | ✅ | ✅ | ✅ |
+| Sexo | deducido (con su origen) | ✅ (desde 2023) | ✅ |
+| Médico y dosis | ✅ | ✅ | — |
+| Diagnóstico | ✅ | solo algunas hojas | cáncer de tiroides |
+| Motivo, ecografía (TIRADS), punción (Bethesda), tipo histológico | ✅ | — | — |
+| TSH, T4L, T3, TRAb, tiroglobulina, anti-tiroglobulina, anti-TPO | ✅ | — | — |
+| Antecedentes familiares, mórbidos, tabaco, alcohol, drogas | ✅ | ✅ (desde 2023) | — |
+
+Cada gráfico explica qué muestra, destaca su conclusión principal e indica cantidad y porcentaje en cada barra. TIRADS y Bethesda muestran el significado de cada categoría. Al pasar el mouse por una barra aparece el detalle. Hay un botón para alternar entre modo claro y oscuro; el programa siempre abre en modo claro.
 
 | Pacientes | Por revisar | Celular |
 |---|---|---|
@@ -47,6 +67,7 @@ Datos que obtiene de cada informe:
 
 - **Página local en vez de ejecutable:** los computadores institucionales suelen bloquear programas `.exe` que se ejecutan desde un pendrive. Una página HTML se abre en cualquier navegador sin instalar nada.
 - **Formato de los informes:** cada informe empieza con `NOMBRE:`, y un Word puede traer varios. El motivo de consulta es el texto libre que va entre `FECHA:` y la primera línea con etiqueta. La dosis sale de la frase "se decide administrar N mC".
+- **Mismo tratamiento:** dos registros del mismo paciente con 60 días o menos de diferencia (constante `VENTANA_MISMO_TRATAMIENTO_DIAS` en `fusionTratamientos.js`). Si una fecha solo trae mes o año, se compara con esa precisión.
 - **Diagnóstico:** se clasifica en este orden de prioridad: cáncer de tiroides → bocio multinodular o nódulo hiperfuncionante → hipertiroidismo → otro. Las líneas de mórbidos y de antecedentes familiares no se consideran, para que un cáncer de otro órgano no cuente como cáncer de tiroides.
 - **Sexo:** el informe no lo trae. Se deduce de los datos gineco-obstétricos, luego del nombre y luego de palabras del texto; si no hay forma de saberlo, queda "Sin dato". La tabla muestra de dónde salió cada uno.
 - **Médicos:** no hay una lista fija de nombres. El programa une las variantes del mismo nombre ("Dra. Pérez", "Dra Ana Pérez") con la forma más completa, y el título Dr./Dra. se decide por mayoría.
@@ -64,10 +85,14 @@ Sistema - no tocar/
   css/estilos.css                estilos (tema claro y oscuro, responsive)
   js/
     version.js                   versión de la aplicación (única fuente)
-    lectorDocx.js                acceso a datos: zip → document.xml → párrafos
-    extractorInforme.js          divide informes y extrae campos
+    lectorZip.js                 acceso a datos: lectura de archivos zip (Word y Excel son zip)
+    lectorDocx.js                Word → párrafos
+    lectorXlsx.js                Excel → hojas y celdas (textos, números, fechas)
+    extractorInforme.js          divide informes Word y extrae campos
+    extractorExcel.js            reconoce planillas de yodo y registro C73 y extrae sus filas
     clasificador.js              reglas: diagnóstico, motivo, umbrales, sexo, médicos
-    procesadorInformes.js        orquesta lectura → extracción → clasificación
+    fusionTratamientos.js        pacientes únicos, tratamientos, registros repetidos y discrepancias
+    procesadorInformes.js        orquesta lectura → extracción → clasificación → fusión
     estadisticas.js              conteos y filtro por período
     exportadorExcel.js           genera el .xlsx
     configuracion.js             umbrales guardados en el navegador
@@ -78,8 +103,8 @@ Sistema - no tocar/
     tema.js                      modo claro / oscuro
     selloAutor.js                firma «by Chiguin» y versión, fijas en pantalla
     app.js                       interfaz y eventos
-ejemplos/                        informes ficticios para probar
-herramientas/generarEjemplos.py  genera esos informes
+ejemplos/                        informes Word y planillas Excel ficticios para probar
+herramientas/generarEjemplos.py  genera esos ejemplos (python-docx y openpyxl)
 pruebas/                         pruebas automáticas (Node)
 ```
 
@@ -98,12 +123,19 @@ npm ci                                       # instala Playwright (solo para pru
 npx playwright install chromium              # navegador para las pruebas
 npm test                                     # todas las pruebas
 node pruebas/revisarCarpeta.mjs ejemplos     # muestra lo que se extrae de cada informe
-python3 herramientas/generarEjemplos.py      # regenera los informes de ejemplo (requiere python-docx)
+python3 herramientas/generarEjemplos.py      # regenera los ejemplos (requiere python-docx y openpyxl)
 ```
 
 Qué se prueba:
 
 - **Extracción:** reglas de lectura con informes ficticios (datos, laboratorio, errores de tipeo, varios informes en un Word, plantillas incompletas, unificación de médicos).
+- **Fusión y cobertura:** con los ejemplos ficticios verifica que:
+  - un paciente tratado dos veces cuente como dos tratamientos;
+  - los registros repetidos no sumen;
+  - Word y Excel se combinen;
+  - las discrepancias queden por revisar;
+  - el cáncer se cuente por paciente;
+  - los porcentajes usen solo los datos disponibles.
 - **Integridad de la firma:** abre la aplicación en Chromium en escritorio, tablet y celular, en modo claro y oscuro, recorre todas las pestañas y comprueba que:
   - el texto sea exactamente `by Chiguin`;
   - la versión real aparezca centrada debajo;
