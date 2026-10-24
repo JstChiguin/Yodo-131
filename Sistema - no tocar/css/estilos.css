@@ -134,6 +134,7 @@ button, input { font: inherit; color: inherit; }
 .grafico-secundario { display: grid; gap: 4px; padding-top: 6px; border-top: 1px solid var(--rejilla); }
 
 .tarjeta-encabezado { display: grid; gap: 2px; }
+.nota-archivos { padding: 8px 12px; border-radius: 8px; background: var(--panel); border: 1px solid var(--borde); }
 .cobertura { margin: 0; font-size: 12px; line-height: 1.45; color: var(--texto-suave); padding-left: 10px; border-left: 2px dashed var(--borde-fuerte); }
 .conclusion {
   margin: 0; padding: 8px 12px; border-radius: 8px; font-size: 14px; line-height: 1.45;

@@ -106,3 +106,26 @@ test('la distribución informa cobertura con y sin dato', () => {
   assert.equal(distribucion.sinDato, 2);
   assert.equal(distribucion.total, 5);
 });
+
+test('agregar una segunda carpeta da el mismo resultado que leer todo junto', async () => {
+  const leerSeleccion = async (filtro) => {
+    const archivos = readdirSync(carpetaEjemplos).filter(filtro).map((nombre) => ({
+      nombre,
+      obtenerBuffer: async () => {
+        const contenido = readFileSync(path.join(carpetaEjemplos, nombre));
+        return contenido.buffer.slice(contenido.byteOffset, contenido.byteOffset + contenido.byteLength);
+      }
+    }));
+    return LectorYodo.ProcesadorInformes.procesarArchivos(archivos);
+  };
+  const soloWord = await leerSeleccion((nombre) => nombre.endsWith('.docx'));
+  const soloExcel = await leerSeleccion((nombre) => nombre.endsWith('.xlsx'));
+  const combinada = LectorYodo.ProcesadorInformes.combinarLecturas(soloWord, soloExcel);
+  const { resultado: todoJunto } = await procesarEjemplos();
+  const resultadoCombinado = LectorYodo.ProcesadorInformes.construirResultado(combinada, LectorYodo.Clasificador.UMBRALES_POR_DEFECTO);
+  assert.equal(resultadoCombinado.tratamientos.length, todoJunto.tratamientos.length);
+  assert.equal(resultadoCombinado.pacientes.length, todoJunto.pacientes.length);
+  assert.equal(resultadoCombinado.registrosUnidos, todoJunto.registrosUnidos);
+  assert.equal(resultadoCombinado.conflictos.length, todoJunto.conflictos.length);
+  assert.deepEqual(combinada.conteo, (await procesarEjemplos()).lectura.conteo);
+});

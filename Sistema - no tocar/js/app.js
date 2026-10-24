@@ -6,6 +6,8 @@
   const estado = {
     lectura: null,
     resultado: null,
+    archivosCargados: new Set(),
+    carpetasCargadas: new Map(),
     filtro: { desde: '', hasta: '' },
     umbrales: Configuracion.obtenerUmbrales(),
     orden: { campo: 'fechaOrden', ascendente: false },
@@ -61,10 +63,38 @@
     if (estado.seccionActiva === 'mantenimiento') renderizarMantenimiento();
   }
 
+  function obtenerClaveArchivo(archivo) {
+    return `${archivo.nombre.split('/').pop().toLowerCase()}|${archivo.tamano ?? ''}`;
+  }
+
+  function obtenerCarpeta(archivo) {
+    const partes = archivo.nombre.split('/');
+    return partes.length > 1 ? partes[0] : 'Archivos sueltos';
+  }
+
+  function actualizarControlesCarga() {
+    const hayCarga = Boolean(estado.lectura);
+    elemento('etiqueta-selector').textContent = hayCarga ? 'Agregar otra carpeta' : 'Elegir carpeta de informes';
+    elemento('boton-empezar').hidden = !hayCarga;
+    if (!hayCarga) {
+      elemento('nota-archivos').textContent = '';
+      return;
+    }
+    const carpetas = [...estado.carpetasCargadas].map(([carpeta, cantidad]) => `${carpeta} (${formatoNumero.format(cantidad)} ${cantidad === 1 ? 'archivo' : 'archivos'})`).join(', ');
+    const { archivosWord, archivosExcel } = estado.lectura.conteo;
+    elemento('nota-archivos').textContent = `Cargado: ${carpetas} · ${formatoNumero.format(archivosWord)} Word y ${formatoNumero.format(archivosExcel)} Excel, analizados en conjunto. Para sumar otra carpeta use «Agregar otra carpeta».`;
+  }
+
   async function leerArchivos(archivos) {
-    const cantidadArchivos = archivos.filter((archivo) => ProcesadorInformes.esArchivoSoportado(archivo.nombre)).length;
-    if (!cantidadArchivos) {
+    const soportados = archivos.filter((archivo) => ProcesadorInformes.esArchivoSoportado(archivo.nombre));
+    if (!soportados.length) {
       mostrarAviso('En esa carpeta no hay archivos Word (.docx) ni Excel (.xlsx). Revise que eligió la carpeta correcta.', true);
+      return;
+    }
+    const nuevos = soportados.filter((archivo) => !estado.archivosCargados.has(obtenerClaveArchivo(archivo)));
+    const cantidadRepetidos = soportados.length - nuevos.length;
+    if (!nuevos.length) {
+      mostrarAviso('Esos archivos ya estaban cargados; no se volvieron a contar.');
       return;
     }
     mostrarAviso('');
@@ -73,26 +103,49 @@
       elemento('barra-progreso-relleno').style.width = `${(leidos / total) * 100}%`;
       elemento('texto-progreso').textContent = `Leyendo archivos… ${leidos} de ${total}`;
     };
-    actualizarProgreso(0, cantidadArchivos);
+    actualizarProgreso(0, nuevos.length);
     try {
-      estado.lectura = await ProcesadorInformes.procesarArchivos(archivos, actualizarProgreso);
+      const esAgregado = Boolean(estado.lectura);
+      const lecturaNueva = await ProcesadorInformes.procesarArchivos(nuevos, actualizarProgreso);
+      estado.lectura = esAgregado ? ProcesadorInformes.combinarLecturas(estado.lectura, lecturaNueva) : lecturaNueva;
+      for (const archivo of nuevos) {
+        estado.archivosCargados.add(obtenerClaveArchivo(archivo));
+        const carpeta = obtenerCarpeta(archivo);
+        estado.carpetasCargadas.set(carpeta, (estado.carpetasCargadas.get(carpeta) || 0) + 1);
+      }
       estado.resultado = ProcesadorInformes.construirResultado(estado.lectura, estado.umbrales);
       elemento('boton-excel').disabled = estado.resultado.tratamientos.length === 0;
+      actualizarControlesCarga();
       actualizarContadorRevisar();
+      const textoRepetidos = cantidadRepetidos ? ` ${formatoNumero.format(cantidadRepetidos)} ya estaban cargados y no se volvieron a contar.` : '';
+      if (esAgregado) mostrarAviso(`Se agregaron ${formatoNumero.format(nuevos.length)} archivo(s). Los gráficos ahora incluyen todas las carpetas cargadas.${textoRepetidos}`);
+      else if (textoRepetidos) mostrarAviso(textoRepetidos.trim());
       cambiarSeccion(estado.seccionActiva === 'mantenimiento' ? 'resumen' : estado.seccionActiva);
     } finally {
       elemento('estado-carga').hidden = true;
     }
   }
 
+  function empezarDeNuevo() {
+    estado.lectura = null;
+    estado.resultado = null;
+    estado.archivosCargados = new Set();
+    estado.carpetasCargadas = new Map();
+    elemento('boton-excel').disabled = true;
+    elemento('contador-revisar').hidden = true;
+    actualizarControlesCarga();
+    mostrarAviso('Se quitaron los archivos cargados. Elija una carpeta para comenzar.');
+    cambiarSeccion('resumen');
+  }
+
   function archivosDesdeSelector(listaArchivos) {
-    return [...listaArchivos].map((archivo) => ({ nombre: archivo.webkitRelativePath || archivo.name, obtenerBuffer: () => archivo.arrayBuffer() }));
+    return [...listaArchivos].map((archivo) => ({ nombre: archivo.webkitRelativePath || archivo.name, tamano: archivo.size, obtenerBuffer: () => archivo.arrayBuffer() }));
   }
 
   async function leerEntradaArrastrada(entrada, rutaPadre = '') {
     if (entrada.isFile) {
       const archivo = await new Promise((resolver, rechazar) => entrada.file(resolver, rechazar));
-      return [{ nombre: `${rutaPadre}${archivo.name}`, obtenerBuffer: () => archivo.arrayBuffer() }];
+      return [{ nombre: `${rutaPadre}${archivo.name}`, tamano: archivo.size, obtenerBuffer: () => archivo.arrayBuffer() }];
     }
     if (!entrada.isDirectory) return [];
     const lector = entrada.createReader();
@@ -425,6 +478,7 @@
     })));
 
     elemento('boton-excel').addEventListener('click', ejecutarConProteccion('App', 'descargarExcel', descargarExcel));
+    elemento('boton-empezar').addEventListener('click', ejecutarConProteccion('App', 'empezarDeNuevo', empezarDeNuevo));
 
     elemento('formulario-clave').addEventListener('submit', ejecutarConProteccion('App', 'verificarClave', async (evento) => {
       evento.preventDefault();

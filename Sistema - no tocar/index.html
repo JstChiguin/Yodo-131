@@ -15,8 +15,9 @@
         <h1>Lector Yodo 131</h1>
       </div>
       <div class="cabecera-acciones">
-        <label class="boton boton-principal" for="selector-carpeta">Elegir carpeta de informes</label>
+        <label class="boton boton-principal" for="selector-carpeta" id="etiqueta-selector">Elegir carpeta de informes</label>
         <input type="file" id="selector-carpeta" webkitdirectory directory multiple hidden>
+        <button type="button" class="boton" id="boton-empezar" hidden>Empezar de nuevo</button>
         <button type="button" class="boton" id="boton-excel" disabled>Descargar Excel</button>
         <button type="button" class="boton boton-tema" id="boton-tema" aria-pressed="false">
           <svg class="icono-tema icono-luna" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>
@@ -45,7 +46,7 @@
           <ol class="pasos">
             <li>Conecte el pendrive.</li>
             <li>Haga clic en <strong>Elegir carpeta de informes</strong> y seleccione la carpeta con los Word y, si los tiene, los Excel de yodo 131 y de cáncer de tiroides.</li>
-            <li>Los gráficos aparecen solos. Si agrega informes nuevos, repita el paso 2.</li>
+            <li>Los gráficos aparecen solos. Si los Word y los Excel están en carpetas distintas, use «Agregar otra carpeta» y se analizan juntos.</li>
           </ol>
           <p class="nota">También puede arrastrar la carpeta a este recuadro. El programa solo lee los archivos: no modifica ni borra ninguno.</p>
           <label class="boton boton-principal boton-grande" for="selector-carpeta">Elegir carpeta de informes</label>
@@ -53,6 +54,7 @@
       </section>
 
       <section class="seccion" id="seccion-resumen" hidden>
+        <p class="nota nota-archivos" id="nota-archivos"></p>
         <div class="filtro-periodo">
           <div class="campo">
             <label for="filtro-desde">Desde</label>

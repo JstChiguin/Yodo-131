@@ -72,6 +72,18 @@
     return lectura;
   }
 
+  function combinarLecturas(lecturaAnterior, lecturaNueva) {
+    const conteo = { ...lecturaAnterior.conteo };
+    for (const [clave, cantidad] of Object.entries(lecturaNueva.conteo)) conteo[clave] = (conteo[clave] || 0) + cantidad;
+    return {
+      registrosLeidos: [...lecturaAnterior.registrosLeidos, ...lecturaNueva.registrosLeidos],
+      registrosCancer: [...lecturaAnterior.registrosCancer, ...lecturaNueva.registrosCancer],
+      documentosNoLeidos: [...lecturaAnterior.documentosNoLeidos, ...lecturaNueva.documentosNoLeidos],
+      conteo,
+      cantidadArchivos: lecturaAnterior.cantidadArchivos + lecturaNueva.cantidadArchivos
+    };
+  }
+
   function completarTratamiento(tratamiento) {
     const { Clasificador } = ns;
     tratamiento.grupoEdad = Clasificador.agruparEdad(tratamiento.edad);
@@ -99,5 +111,5 @@
     };
   }
 
-  ns.ProcesadorInformes = { procesarArchivos, construirResultado, esArchivoSoportado };
+  ns.ProcesadorInformes = { procesarArchivos, combinarLecturas, construirResultado, esArchivoSoportado };
 })(globalThis.LectorYodo = globalThis.LectorYodo || {});
