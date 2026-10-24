@@ -110,6 +110,12 @@ pruebas/                         pruebas automáticas (Node)
 
 ## Uso
 
+**En línea, sin instalar nada:** https://jstchiguin.github.io/Yodo131/
+
+El programa se descarga desde GitHub Pages, pero los archivos que se eligen se leen en el navegador del propio computador: no se suben a ningún servidor. Requiere internet solo para abrir la página.
+
+**Desde un pendrive, sin internet:**
+
 1. Descargar el repositorio y copiar al pendrive `ABRIR LECTOR YODO 131.html`, `LEEME - instrucciones.txt` y la carpeta `Sistema - no tocar`.
 2. Abrir `ABRIR LECTOR YODO 131.html` con Chrome o Edge.
 3. Elegir la carpeta de informes. Para probar sin datos reales, elegir la carpeta `ejemplos/`.
