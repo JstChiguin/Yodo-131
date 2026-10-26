@@ -1,0 +1,40 @@
+LECTOR YODO 131 - VERSIÓN PORTABLE PARA WINDOWS
+================================================
+
+QUÉ CONTIENE EL PENDRIVE
+- Yodo131.exe ............ el programa (un solo archivo).
+- Este LEEME.
+
+CÓMO ABRIRLO
+1. Conecte el pendrive.
+2. Haga doble clic en Yodo131.exe.
+3. Se abre una ventana del Lector Yodo 131 (usa Microsoft Edge, que ya viene
+   con Windows). No necesita internet ni instalar nada, ni ser administrador.
+4. Haga clic en "Elegir carpeta de informes" y elija la carpeta con los Word
+   y, si los tiene, los Excel de yodo 131 y de cáncer de tiroides.
+   Si están en carpetas distintas, use después "Agregar otra carpeta".
+
+PARA PRESENTAR
+Antes de proyectar, haga clic en "Modo presentación". Quedan solo los
+gráficos. Al terminar, haga clic en "Salir de presentación".
+
+LA PRIMERA VEZ EN UN COMPUTADOR
+- Windows puede mostrar "Windows protegió su PC". Haga clic en
+  "Más información" y luego en "Ejecutar de todas formas". Ocurre porque el
+  programa no tiene una firma digital comercial; no significa que tenga virus.
+- Si el pendrive se copió desde un archivo descargado (.zip), antes de
+  descomprimirlo haga clic derecho en el .zip > Propiedades > marque
+  "Desbloquear" > Aceptar.
+
+IMPORTANTE
+- El programa solo LEE los archivos. No modifica ni borra ninguno.
+- Los datos de los pacientes no salen del computador ni se envían a internet.
+- El programa se copia a una carpeta propia del usuario de Windows para poder
+  abrirse (AppData\Local\Yodo131). Ahí no se guarda ningún dato de pacientes:
+  solo el programa y los ajustes de la sección de mantenimiento.
+- Los Word antiguos (.doc) y Excel antiguos (.xls) hay que abrirlos y usar
+  "Guardar como" .docx / .xlsx.
+
+Ante cualquier problema, avisar a Chiguin.
+
+by Chiguin

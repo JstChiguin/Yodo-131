@@ -11,4 +11,8 @@ Informes*/
 .DS_Store
 Thumbs.db
 node_modules/
+
+# Versión portable: se genera con npm run portable
+portable/salida/
+portable/lanzador/aplicacion_empaquetada.go
 __pycache__/
