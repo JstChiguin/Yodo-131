@@ -2,6 +2,15 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y [versionado semántico](https://semver.org/lang/es/).
 
+## [1.6.0] - 2026-10-26
+
+### Agregado
+- Versión portable para Windows 10/11 de 64 bits: `Yodo131.exe`, un solo archivo de 2,5 MB que se abre con doble clic desde el pendrive, sin instalar nada, sin internet y sin permisos de administrador.
+- El ejecutable lleva dentro la misma aplicación, sin cambios. Al abrirse la copia a `%LOCALAPPDATA%\Yodo131` y la muestra en Microsoft Edge (o Google Chrome si no hay Edge) en modo aplicación: una ventana propia, sin barra de direcciones, con un perfil aislado, sin extensiones ni sincronización.
+- Ícono propio e información de versión «by Chiguin» en las propiedades del archivo. El manifiesto declara que se ejecuta sin permisos de administrador.
+- Construcción reproducible con `npm run portable` (Go y el paquete de desarrollo `resedit`). La integración continua compila el ejecutable y lo deja descargable.
+- Pruebas: unitarias del lanzador en Go y una prueba de punta a punta que ejecuta el lanzador, abre la aplicación sin conexión, lee los ejemplos ficticios y verifica la firma. La construcción se detiene si la firma «by Chiguin» falta o cambió.
+
 ## [1.5.0] - 2026-10-24
 
 ### Agregado
