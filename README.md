@@ -107,6 +107,12 @@ Sistema - no tocar/
     app.js                       interfaz y eventos
 ejemplos/                        informes Word y planillas Excel ficticios para probar
 herramientas/generarEjemplos.py  genera esos ejemplos (python-docx y openpyxl)
+herramientas/generarIcono.mjs    genera portable/recursos/icono.ico desde icono.svg
+portable/
+  lanzador/                      Yodo131.exe: copia la aplicación y la abre en Edge o Chrome (Go)
+  generador/                     empaqueta "Sistema - no tocar" dentro del lanzador
+  empaquetador/                  arma Yodo131_Portable.zip
+  construirPortable.mjs          construcción completa: pruebas, compilación, ícono, versión y zip
 pruebas/                         pruebas automáticas (Node)
 ```
 
@@ -123,6 +129,26 @@ El programa se descarga desde GitHub Pages, pero los archivos que se eligen se l
 3. Elegir la carpeta de informes. Para probar sin datos reales, elegir la carpeta `ejemplos/`.
 
 Requisitos: Chrome o Edge actualizados (Firefox 113 o superior también sirve). Los Word antiguos (`.doc`) deben guardarse como `.docx`.
+
+**Versión portable para Windows (`Yodo131.exe`):**
+
+Un solo archivo de unos 2,5 MB para Windows 10/11 de 64 bits. Se copia al pendrive junto con su LEEME y se abre con doble clic: no se instala, no necesita internet ni permisos de administrador.
+
+- **Qué hace al abrirse:** copia la aplicación que lleva adentro (la misma de `Sistema - no tocar`, sin cambios) a `%LOCALAPPDATA%\Yodo131\aplicacion\<versión>`. Luego la abre en Microsoft Edge, que viene con Windows, o en Google Chrome, en modo aplicación: una ventana propia sin barra de direcciones, con un perfil aislado en `%LOCALAPPDATA%\Yodo131\perfil-navegador`, sin extensiones, sin sincronización y sin tareas de red en segundo plano.
+- **Si no hay Edge ni Chrome:** usa el navegador predeterminado.
+- **Si algo falla:** muestra un mensaje comprensible y guarda el detalle técnico, sin datos de pacientes, en `%LOCALAPPDATA%\Yodo131\registro-lanzador.log`.
+- **Datos de pacientes:** los Word y Excel se siguen leyendo solo en el computador; no se copian ni se guardan.
+
+Para construirlo se necesitan Go 1.24 o superior y Node.js:
+
+```bash
+npm ci
+npm run portable      # genera portable/salida/Yodo131_Portable.zip y SHA256.txt
+```
+
+La integración continua también lo construye en cada push y lo deja como artefacto descargable en la pestaña *Actions*.
+
+El ejecutable no lleva firma digital comercial (Authenticode). Por eso, la primera vez Windows SmartScreen puede pedir *Más información → Ejecutar de todas formas*.
 
 ## Pruebas
 
@@ -151,6 +177,10 @@ Qué se prueba:
 
   Si alguien modifica, elimina, reemplaza, oculta o mueve la firma, la prueba falla con un mensaje del tipo `FIRMA DE AUTOR ALTERADA (...)`. Esta comprobación solo corre en las pruebas: nunca bloquea la aplicación para quien la usa.
 - **Modo presentación:** comprueba que oculte todo lo de uso interno, que los gráficos sigan visibles, que tarjetas y barras se resalten al pasar el mouse y que al salir vuelva todo.
+- **Versión portable:**
+  - pruebas unitarias del lanzador en Go: extracción, rutas seguras, orden de búsqueda de Edge y Chrome, argumentos del navegador y registro de errores sin la carpeta personal;
+  - prueba de punta a punta: compila el lanzador, lo ejecuta, comprueba que la copia de la aplicación sea idéntica al original, abre la ventana sin conexión, lee los ejemplos y verifica la firma;
+  - la construcción se detiene si el ejecutable no es de 64 bits, si abriría una consola, si le falta el ícono, la versión o el manifiesto sin administrador, o si la firma «by Chiguin» falta o cambió.
 - **Versión:** sigue versionamiento semántico, coincide en `package.json` y `version.js`, y tiene su entrada en el CHANGELOG.
 
 Las pruebas corren automáticamente en GitHub Actions en cada push y pull request (`.github/workflows/pruebas.yml`).
@@ -173,7 +203,7 @@ El historial está en [CHANGELOG.md](CHANGELOG.md).
 
 ## Tecnologías
 
-HTML · CSS · JavaScript (sin dependencias) · Node.js para pruebas · Python para generar ejemplos. Costo de operación: $0.
+HTML · CSS · JavaScript (sin dependencias) · Go (lanzador portable, solo biblioteca estándar) · Node.js para pruebas y construcción (Playwright y resedit, solo en desarrollo) · Python para generar ejemplos. Todo gratuito y de código abierto. Costo de operación: $0.
 
 ## Autoría
 
