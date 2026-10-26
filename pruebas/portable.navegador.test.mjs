@@ -49,11 +49,11 @@ test('el lanzador portable abre la aplicación empaquetada sin internet y con la
 
     execFileSync('mkdir', ['-p', carpetaBinarios]);
     const rutaEnvoltorio = path.join(carpetaBinarios, 'chromium');
-    writeFileSync(rutaEnvoltorio, `#!/bin/sh\nprintf '%s\\n' "$@" > '${rutaArgumentos}'\necho $$ > '${rutaProceso}'\nexec '${chromium.executablePath()}' --headless=new${process.getuid?.() === 0 ? ' --no-sandbox' : ''} --remote-debugging-port=${PUERTO_DEPURACION} "$@" 2> '${rutaSalidaNavegador}'\n`);
+    writeFileSync(rutaEnvoltorio, `#!/bin/sh\nprintf '%s\\n' "$@" > '${rutaArgumentos}'\necho $$ > '${rutaProceso}'\nexec '${chromium.executablePath()}' --headless=new --no-sandbox --remote-debugging-port=${PUERTO_DEPURACION} "$@" 2> '${rutaSalidaNavegador}'\n`);
     chmodSync(rutaEnvoltorio, 0o755);
 
     const ejecucion = spawnSync(rutaLanzador, [], {
-      env: { ...process.env, PATH: `${carpetaBinarios}:/usr/bin:/bin`, XDG_CACHE_HOME: carpetaCache, HOME: carpetaTemporal },
+      env: { ...process.env, PATH: carpetaBinarios, XDG_CACHE_HOME: carpetaCache, HOME: carpetaTemporal },
       encoding: 'utf8',
       timeout: 20000
     });
