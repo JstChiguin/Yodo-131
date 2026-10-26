@@ -25,5 +25,9 @@ func render(ancho, alto int, dibujar func(layout.Context) layout.Dimensions) (im
 	if err := ventana.Frame(gtx.Ops); err != nil {
 		return nil, err
 	}
-	return ventana.Screenshot()
+	imagen := image.NewRGBA(image.Rect(0, 0, ancho, alto))
+	if err := ventana.Screenshot(imagen); err != nil {
+		return nil, err
+	}
+	return imagen, nil
 }
