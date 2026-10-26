@@ -2,12 +2,12 @@ name: Pruebas
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
 
 jobs:
   pruebas:
-    name: Extracción y firma de autor
+    name: Extracción, firma de autor y versión portable
     runs-on: ubuntu-latest
     steps:
       - name: Obtener el código
@@ -19,6 +19,12 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Preparar Go para el lanzador portable
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: false
+
       - name: Instalar dependencias de prueba
         run: npm ci
 
@@ -27,3 +33,15 @@ jobs:
 
       - name: Ejecutar pruebas (incluye la integridad de la firma by Chiguin)
         run: npm test
+
+      - name: Construir Yodo131.exe portable para Windows
+        run: npm run portable
+
+      - name: Guardar el paquete portable
+        uses: actions/upload-artifact@v4
+        with:
+          name: Yodo131_Portable
+          path: |
+            portable/salida/Yodo131_Portable.zip
+            portable/salida/SHA256.txt
+          retention-days: 30
