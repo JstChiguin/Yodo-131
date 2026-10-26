@@ -44,6 +44,8 @@ jobs:
           go mod tidy 2> tidy.err
           go build -trimpath -ldflags "-s -w -H windowsgui" -o Yodo131.exe . 2> build.err
           estado=$?
+          go build -trimpath -ldflags "-s -w" -o Yodo131-consola.exe . 2> build-consola.err
+          if [ $estado -eq 0 ]; then estado=$?; fi
           echo "=== go mod tidy ==="; cat tidy.err
           echo "=== go build ==="; cat build.err
           if [ $estado -ne 0 ]; then
@@ -56,13 +58,13 @@ jobs:
         shell: pwsh
         run: |
           $antesLocal = Test-Path "$env:LOCALAPPDATA\Yodo131"
-          $salida = & "nativo\app\Yodo131.exe" --autoverificacion ejemplos --salida "$env:RUNNER_TEMP\autoverificacion.xlsx"
+          $salida = & "nativo\app\Yodo131-consola.exe" --autoverificacion ejemplos --salida "autoverificacion.xlsx" 2>&1
           $salida | ForEach-Object { Write-Host $_ }
           $texto = $salida -join "`n"
           if ($texto -notmatch "by Chiguin") { Write-Error "Falta la firma by Chiguin en la salida"; exit 1 }
           if ($texto -notmatch "Tratamientos con yodo 131: 12") { Write-Error "El conteo de tratamientos no es 12"; exit 1 }
-          if ($texto -notmatch "Pacientes únicos: 11") { Write-Error "El conteo de pacientes no es 11"; exit 1 }
-          if (-not (Test-Path "$env:RUNNER_TEMP\autoverificacion.xlsx")) { Write-Error "No se generó el Excel"; exit 1 }
+          if ($texto -notmatch "Pacientes .nicos: 11") { Write-Error "El conteo de pacientes no es 11"; exit 1 }
+          if (-not (Test-Path "autoverificacion.xlsx")) { Write-Error "No se generó el Excel"; exit 1 }
           $despuesLocal = Test-Path "$env:LOCALAPPDATA\Yodo131"
           if ((-not $antesLocal) -and $despuesLocal) { Write-Error "La app escribió en AppData\Local\Yodo131"; exit 1 }
           Write-Host "Autoverificación correcta: sin extracción de archivos de la aplicación a AppData."
@@ -74,11 +76,13 @@ jobs:
         run: nativo/app/Yodo131.exe --captura captura-nativa.png --carpeta ejemplos
 
       - name: Guardar el ejecutable y la captura
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: Yodo131-nativo
           path: |
             nativo/app/Yodo131.exe
+            autoverificacion.xlsx
             captura-nativa.png
           retention-days: 30
           if-no-files-found: warn
