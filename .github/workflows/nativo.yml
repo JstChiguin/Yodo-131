@@ -1,0 +1,75 @@
+name: Nativo Go (prototipo)
+
+on:
+  push:
+    branches: [nativo-go]
+  pull_request:
+    branches: [nativo-go]
+
+jobs:
+  windows:
+    name: Compilar y probar la versión nativa en Windows
+    runs-on: windows-latest
+    steps:
+      - name: Obtener el código
+        uses: actions/checkout@v4
+
+      - name: Preparar Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: false
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Regenerar el oráculo desde el JavaScript y comprobar que no cambió
+        shell: bash
+        run: |
+          node herramientas/generarOraculo.mjs
+          git diff --exit-code -- nativo/nucleo/diferencial/testdata || (echo "El oráculo JS ya no coincide con el golden committeado" && exit 1)
+
+      - name: Pruebas diferenciales y de firma del núcleo (JS vs Go)
+        shell: bash
+        working-directory: nativo/nucleo
+        run: go test ./...
+
+      - name: Compilar Yodo131.exe nativo (Gio, sin consola)
+        shell: bash
+        working-directory: nativo/app
+        run: |
+          go mod tidy
+          go build -trimpath -ldflags "-s -w -H windowsgui" -o Yodo131.exe .
+
+      - name: Autoverificación en Windows (lee ejemplos, exporta Excel, firma)
+        shell: pwsh
+        run: |
+          $antesLocal = Test-Path "$env:LOCALAPPDATA\Yodo131"
+          $salida = & "nativo\app\Yodo131.exe" --autoverificacion ejemplos --salida "$env:RUNNER_TEMP\autoverificacion.xlsx"
+          $salida | ForEach-Object { Write-Host $_ }
+          $texto = $salida -join "`n"
+          if ($texto -notmatch "by Chiguin") { Write-Error "Falta la firma by Chiguin en la salida"; exit 1 }
+          if ($texto -notmatch "Tratamientos con yodo 131: 12") { Write-Error "El conteo de tratamientos no es 12"; exit 1 }
+          if ($texto -notmatch "Pacientes únicos: 11") { Write-Error "El conteo de pacientes no es 11"; exit 1 }
+          if (-not (Test-Path "$env:RUNNER_TEMP\autoverificacion.xlsx")) { Write-Error "No se generó el Excel"; exit 1 }
+          $despuesLocal = Test-Path "$env:LOCALAPPDATA\Yodo131"
+          if ((-not $antesLocal) -and $despuesLocal) { Write-Error "La app escribió en AppData\Local\Yodo131"; exit 1 }
+          Write-Host "Autoverificación correcta: sin extracción de archivos de la aplicación a AppData."
+
+      - name: Captura de la interfaz nativa (puede requerir GPU)
+        id: captura
+        continue-on-error: true
+        shell: bash
+        run: nativo/app/Yodo131.exe --captura captura-nativa.png --carpeta ejemplos
+
+      - name: Guardar el ejecutable y la captura
+        uses: actions/upload-artifact@v4
+        with:
+          name: Yodo131-nativo
+          path: |
+            nativo/app/Yodo131.exe
+            captura-nativa.png
+          retention-days: 30
+          if-no-files-found: warn

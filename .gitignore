@@ -16,3 +16,12 @@ node_modules/
 portable/salida/
 portable/lanzador/aplicacion_empaquetada.go
 __pycache__/
+
+# Prototipo nativo en Go
+nativo/app/Yodo131.exe
+nativo/app/go.sum
+nativo/app/salida.xlsx
+nativo/**/captura*.png
+captura-nativa.png
+out.xlsx
+!nativo/nucleo/diferencial/testdata/oraculo.xlsx
