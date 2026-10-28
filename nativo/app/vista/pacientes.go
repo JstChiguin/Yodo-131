@@ -405,7 +405,7 @@ func (v *Vista) celdaExamenes(gtx C, t *Tema, r modelo.Objeto) D {
 			colorChip = t.Elevado
 		}
 		chips = append(chips, layout.Rigid(func(gtx C) D {
-			return layout.Inset{Right: 3, Bottom: 2}.Layout(gtx, func(gtx C) D { return t.chip(gtx, texto, colorChip) })
+			return layout.Inset{Bottom: 3}.Layout(gtx, func(gtx C) D { return t.chip(gtx, texto, colorChip) })
 		}))
 	}
 	tg := ""
@@ -419,7 +419,7 @@ func (v *Vista) celdaExamenes(gtx C, t *Tema, r modelo.Objeto) D {
 	if len(chips) == 0 {
 		return D{}
 	}
-	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx, chips...)
+	return layout.Flex{Axis: layout.Vertical, Alignment: layout.Start}.Layout(gtx, chips...)
 }
 
 func (v *Vista) celdaRevisar(gtx C, t *Tema, r modelo.Objeto) D {
@@ -453,7 +453,9 @@ func (t *Tema) chip(gtx C, texto string, c color.NRGBA) D {
 	fondo := mezclar(c, t.Panel, 0.16)
 	return fondoRedondeado(gtx, fondo, 10, func(gtx C) D {
 		return layout.Inset{Left: 8, Right: 8, Top: 1, Bottom: 1}.Layout(gtx, func(gtx C) D {
-			return t.etiqueta(12, texto, c, TipografiaCuerpo).Layout(gtx)
+			lbl := t.etiqueta(12, texto, c, TipografiaCuerpo)
+			lbl.MaxLines = 1
+			return lbl.Layout(gtx)
 		})
 	})
 }

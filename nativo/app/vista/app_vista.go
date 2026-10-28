@@ -349,12 +349,23 @@ func (v *Vista) bienvenida(gtx C, t *Tema, datos Datos) D {
 }
 
 func (v *Vista) conFirma(gtx C, t *Tema, w layout.Widget) D {
-	return layout.Stack{Alignment: layout.SE}.Layout(gtx,
-		layout.Expanded(w),
-		layout.Stacked(func(gtx C) D {
-			return layout.Inset{Right: 14, Bottom: 10}.Layout(gtx, func(gtx C) D { return v.firma(gtx, t) })
-		}),
+	gtx.Constraints.Min = gtx.Constraints.Max
+	dims := w(gtx)
+
+	gtxFirma := gtx
+	gtxFirma.Constraints.Min = image.Point{}
+	macro := op.Record(gtx.Ops)
+	dimsFirma := v.firma(gtxFirma, t)
+	grabado := macro.Stop()
+
+	desplazamiento := image.Pt(
+		gtx.Constraints.Max.X-dimsFirma.Size.X-gtx.Dp(14),
+		gtx.Constraints.Max.Y-dimsFirma.Size.Y-gtx.Dp(10),
 	)
+	trans := op.Offset(desplazamiento).Push(gtx.Ops)
+	grabado.Add(gtx.Ops)
+	trans.Pop()
+	return dims
 }
 
 func (v *Vista) firma(gtx C, t *Tema) D {
