@@ -69,13 +69,26 @@ jobs:
           if ((-not $antesLocal) -and $despuesLocal) { Write-Error "La app escribió en AppData\Local\Yodo131"; exit 1 }
           Write-Host "Autoverificación correcta: sin extracción de archivos de la aplicación a AppData."
 
-      - name: Captura de la interfaz nativa (puede requerir GPU)
-        id: captura
+      - name: Capturas de todas las pantallas (render headless)
+        id: capturas
         continue-on-error: true
         shell: bash
-        run: nativo/app/Yodo131.exe --captura captura-nativa.png --carpeta ejemplos
+        run: |
+          set +e
+          mkdir -p capturas
+          EXE=nativo/app/Yodo131-consola.exe
+          "$EXE" --captura capturas/01-bienvenida.png --pantalla bienvenida 2> cap1.err
+          "$EXE" --captura capturas/02-graficos.png --pantalla resumen --carpeta ejemplos 2> cap2.err
+          "$EXE" --captura capturas/03-pacientes.png --pantalla pacientes --carpeta ejemplos 2> cap3.err
+          "$EXE" --captura capturas/04-revisar.png --pantalla revisar --carpeta ejemplos 2> cap4.err
+          "$EXE" --captura capturas/05-mantenimiento.png --pantalla mantenimiento --carpeta ejemplos 2> cap5.err
+          "$EXE" --captura capturas/06-graficos-oscuro.png --pantalla resumen --carpeta ejemplos --tema oscuro 2> cap6.err
+          "$EXE" --captura capturas/07-presentacion.png --pantalla resumen --carpeta ejemplos --presentacion 2> cap7.err
+          echo "=== errores de captura (si los hubo) ==="
+          cat cap*.err 2>/dev/null
+          ls -l capturas || true
 
-      - name: Guardar el ejecutable y la captura
+      - name: Guardar el ejecutable, el Excel y las capturas
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -83,6 +96,6 @@ jobs:
           path: |
             nativo/app/Yodo131.exe
             autoverificacion.xlsx
-            captura-nativa.png
+            capturas/
           retention-days: 30
           if-no-files-found: warn
