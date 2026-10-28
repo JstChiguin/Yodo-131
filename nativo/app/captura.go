@@ -66,7 +66,7 @@ func capturarPantalla(destino, pantalla, temaNombre, carpeta string, presentacio
 		a.vista.SetClaveValida(true, "")
 	}
 	a.vista.Presentacion = presentacion
-	ancho := 1180
+	ancho := 1440
 	alto := altoPantalla(pantalla)
 	imagen, err := render(ancho, alto, func(gtx layout.Context) layout.Dimensions {
 		a.vista.Layout(gtx, a.tema, a.datos)

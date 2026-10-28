@@ -175,17 +175,10 @@ func (t *Tema) boton(gtx C, clic *widget.Clickable, texto string, tipo int, habi
 		}
 		return widget.Border{Color: borde, CornerRadius: 8, Width: 1}.Layout(gtx, func(gtx C) D {
 			return fondoRedondeado(gtx, fondo, 8, func(gtx C) D {
-				gtx.Constraints.Min.Y = gtx.Dp(40)
-				return layout.Inset{Left: 16, Right: 16}.Layout(gtx, func(gtx C) D {
-					return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-						layout.Flexed(1, func(gtx C) D {
-							return layout.Center.Layout(gtx, func(gtx C) D {
-								lbl := t.etiqueta(14, texto, colorTexto, TipografiaCuerpo)
-								lbl.Font.Weight = font.SemiBold
-								return lbl.Layout(gtx)
-							})
-						}),
-					)
+				return layout.Inset{Left: 16, Right: 16, Top: 10, Bottom: 10}.Layout(gtx, func(gtx C) D {
+					lbl := t.etiqueta(14, texto, colorTexto, TipografiaCuerpo)
+					lbl.Font.Weight = font.SemiBold
+					return lbl.Layout(gtx)
 				})
 			})
 		})

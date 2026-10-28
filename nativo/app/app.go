@@ -181,7 +181,7 @@ func (a *aplicacion) invalidar() {
 func ejecutarInterfaz() error {
 	a := nuevaAplicacion()
 	ventana := new(gioapp.Window)
-	ventana.Option(gioapp.Title("Lector Yodo 131"), gioapp.Size(unit.Dp(1180), unit.Dp(760)))
+	ventana.Option(gioapp.Title("Lector Yodo 131"), gioapp.Size(unit.Dp(1440), unit.Dp(860)), gioapp.MinSize(unit.Dp(1024), unit.Dp(640)))
 	a.mu.Lock()
 	a.ventana = ventana
 	a.mu.Unlock()
