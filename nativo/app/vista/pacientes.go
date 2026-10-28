@@ -39,17 +39,17 @@ type columnaTabla struct {
 }
 
 var columnasTabla = []columnaTabla{
-	{"Paciente", "nombrePaciente", 2.2},
+	{"Paciente", "nombrePaciente", 2.0},
 	{"RUT", "rut", 1.2},
-	{"Edad", "edad", 0.5},
+	{"Edad", "edad", 0.6},
 	{"Sexo", "sexo", 0.6},
 	{"Fecha", "fechaOrden", 1.0},
-	{"Diagnóstico", "diagnostico", 2.2},
+	{"Diagnóstico", "diagnostico", 1.9},
 	{"Dosis", "dosisMci", 1.0},
-	{"TIRADS", "tirads", 0.7},
-	{"Bethesda", "bethesda", 0.8},
+	{"TIRADS", "tirads", 0.95},
+	{"Bethesda", "bethesda", 1.1},
 	{"Fuente", "", 1.0},
-	{"Exámenes", "", 1.8},
+	{"Exámenes", "", 2.0},
 	{"Revisar", "", 1.6},
 }
 
@@ -453,9 +453,7 @@ func (t *Tema) chip(gtx C, texto string, c color.NRGBA) D {
 	fondo := mezclar(c, t.Panel, 0.16)
 	return fondoRedondeado(gtx, fondo, 10, func(gtx C) D {
 		return layout.Inset{Left: 8, Right: 8, Top: 1, Bottom: 1}.Layout(gtx, func(gtx C) D {
-			lbl := t.etiqueta(12, texto, c, TipografiaCuerpo)
-			lbl.MaxLines = 1
-			return lbl.Layout(gtx)
+			return t.etiqueta(12, texto, c, TipografiaCuerpo).Layout(gtx)
 		})
 	})
 }
