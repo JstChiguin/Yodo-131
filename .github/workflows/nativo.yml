@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [nativo-go]
 
+permissions:
+  contents: write
+
 jobs:
   windows:
     name: Compilar y probar la versión nativa en Windows
@@ -90,20 +93,22 @@ jobs:
 
       - name: Publicar capturas en la rama capturas-ci para revisión
         if: always()
-        continue-on-error: true
         shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set +e
-          git config user.name "github-actions"
-          git config user.email "actions@users.noreply.github.com"
-          cp -r capturas "$RUNNER_TEMP/capturas"
-          git checkout --orphan capturas-ci
-          git reset --hard >/dev/null 2>&1
-          mkdir -p capturas
-          cp "$RUNNER_TEMP"/capturas/*.png capturas/ 2>/dev/null
-          git add -f capturas/*.png
-          git commit -m "capturas CI"
-          git push -f origin capturas-ci
+          set -e
+          destino="$RUNNER_TEMP/publicar"
+          rm -rf "$destino"
+          mkdir -p "$destino/capturas"
+          cp capturas/*.png "$destino/capturas/"
+          cd "$destino"
+          git init -q
+          git checkout -q -b capturas-ci
+          git add capturas
+          git -c user.name="JstChiguin" -c user.email="chiguinchiang@gmail.com" commit -q -m "capturas CI del render nativo"
+          git push -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" capturas-ci
+          echo "Capturas publicadas en la rama capturas-ci."
 
       - name: Guardar el ejecutable, el Excel y las capturas
         if: always()
