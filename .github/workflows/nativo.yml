@@ -88,6 +88,23 @@ jobs:
           cat cap*.err 2>/dev/null
           ls -l capturas || true
 
+      - name: Publicar capturas en la rama capturas-ci para revisión
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          git config user.name "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          cp -r capturas "$RUNNER_TEMP/capturas"
+          git checkout --orphan capturas-ci
+          git reset --hard >/dev/null 2>&1
+          mkdir -p capturas
+          cp "$RUNNER_TEMP"/capturas/*.png capturas/ 2>/dev/null
+          git add -f capturas/*.png
+          git commit -m "capturas CI"
+          git push -f origin capturas-ci
+
       - name: Guardar el ejecutable, el Excel y las capturas
         if: always()
         uses: actions/upload-artifact@v4
