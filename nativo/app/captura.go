@@ -11,6 +11,7 @@ import (
 	"gioui.org/unit"
 
 	"yodo131/app/vista"
+	"yodo131/nucleo/estadisticas"
 )
 
 func render(ancho, alto int, dibujar func(layout.Context) layout.Dimensions) (image.Image, error) {
@@ -47,10 +48,15 @@ func altoPantalla(pantalla string) int {
 	}
 }
 
-func capturarPantalla(destino, pantalla, temaNombre, carpeta string, presentacion bool) error {
+func capturarPantalla(destino, pantalla, temaNombre, carpeta string, presentacion bool, desde, hasta, resaltar string) error {
 	a := nuevaAplicacion()
 	if carpeta != "" {
 		a.cargarCarpeta(carpeta)
+	}
+	if desde != "" || hasta != "" {
+		a.filtro = estadisticas.Filtro{Desde: desde, Hasta: hasta}
+		a.vista.SetFiltroPeriodo(desde, hasta)
+		a.reconstruir()
 	}
 	if temaNombre == "oscuro" {
 		a.oscuro = true
@@ -66,6 +72,9 @@ func capturarPantalla(destino, pantalla, temaNombre, carpeta string, presentacio
 		a.vista.SetClaveValida(true, "")
 	}
 	a.vista.Presentacion = presentacion
+	if resaltar != "" {
+		a.vista.ForzarResalto(resaltar)
+	}
 	ancho := 1440
 	alto := altoPantalla(pantalla)
 	imagen, err := render(ancho, alto, func(gtx layout.Context) layout.Dimensions {

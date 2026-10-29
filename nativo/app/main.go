@@ -24,6 +24,9 @@ func main() {
 	temaNombre := flag.String("tema", "claro", "claro u oscuro")
 	carpeta := flag.String("carpeta", "", "carpeta de datos para la captura")
 	presentacion := flag.Bool("presentacion", false, "modo presentación en la captura")
+	desde := flag.String("desde", "", "mes inicial del período (yyyy-mm)")
+	hasta := flag.String("hasta", "", "mes final del período (yyyy-mm)")
+	resaltar := flag.String("resaltar", "", "id de tarjeta o cifra a resaltar en la captura")
 	flag.Parse()
 
 	if *autoverificacion != "" {
@@ -34,7 +37,7 @@ func main() {
 		return
 	}
 	if *captura != "" {
-		if err := capturarPantalla(*captura, *pantalla, *temaNombre, *carpeta, *presentacion); err != nil {
+		if err := capturarPantalla(*captura, *pantalla, *temaNombre, *carpeta, *presentacion, *desde, *hasta, *resaltar); err != nil {
 			fmt.Fprintln(os.Stderr, "captura:", err)
 			os.Exit(1)
 		}

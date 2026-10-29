@@ -18,13 +18,17 @@ import (
 )
 
 type Datos struct {
-	TieneDatos   bool
-	Cargando     bool
-	Mensaje      string
-	NotaArchivos string
-	Est          estadisticas.Estadisticas
-	Resultado    modelo.Resultado
-	Umbrales     map[string]float64
+	TieneDatos          bool
+	Cargando            bool
+	Mensaje             string
+	NotaArchivos        string
+	Est                 estadisticas.Estadisticas
+	Resultado           modelo.Resultado
+	TratamientosPeriodo []modelo.Objeto
+	Umbrales            map[string]float64
+	PeriodoMin          string
+	PeriodoMax          string
+	CantidadSinFecha    int
 }
 
 type Acciones struct {
@@ -38,6 +42,9 @@ type Acciones struct {
 	GuardarUmbrales      bool
 	UmbralesNuevos       map[string]float64
 	RestablecerUmbrales  bool
+	CambiarPeriodo       bool
+	PeriodoDesde         string
+	PeriodoHasta         string
 }
 
 type Vista struct {
@@ -61,11 +68,24 @@ type Vista struct {
 
 	pacientes     pacientesEstado
 	mantenimiento mantenimientoEstado
+
+	resaltos           map[string]*resalto
+	forzarResalto      string
+	resaltoInstantaneo bool
+
+	filtroDesde       string
+	filtroHasta       string
+	periodoDesdeMenos widget.Clickable
+	periodoDesdeMas   widget.Clickable
+	periodoHastaMenos widget.Clickable
+	periodoHastaMas   widget.Clickable
+	periodoTodo       widget.Clickable
 }
 
 func NuevaVista() *Vista {
 	v := &Vista{Seccion: "resumen"}
 	v.lista.Axis = layout.Vertical
+	v.resaltos = map[string]*resalto{}
 	v.pacientes.inicializar()
 	v.mantenimiento.inicializar()
 	return v
@@ -109,6 +129,8 @@ func (v *Vista) Layout(gtx C, t *Tema, datos Datos) Acciones {
 		}
 	}
 
+	v.procesarPeriodo(gtx, datos, &acciones)
+
 	rellenarFondo(gtx, t.Fondo)
 
 	bloques := []layout.Widget{
@@ -144,6 +166,16 @@ func (v *Vista) SetMensajeUmbrales(mensaje string) {
 
 func (v *Vista) PrefillUmbrales(umbrales map[string]float64) {
 	v.mantenimiento.prefill(umbrales)
+}
+
+func (v *Vista) SetFiltroPeriodo(desde, hasta string) {
+	v.filtroDesde = desde
+	v.filtroHasta = hasta
+}
+
+func (v *Vista) ForzarResalto(id string) {
+	v.resaltoInstantaneo = true
+	v.forzarResalto = id
 }
 
 func (t *Tema) centrado(gtx C, w layout.Widget) D {
@@ -317,14 +349,15 @@ func (v *Vista) layoutResumen(gtx C, t *Tema, datos Datos) D {
 				})
 			})
 		}),
+		layout.Rigid(func(gtx C) D { return v.barraFiltroPeriodo(gtx, t, datos) }),
 		layout.Rigid(func(gtx C) D { return v.cifrasYLuego(gtx, t, datos) }),
 		layout.Rigid(func(gtx C) D { return layout.Spacer{Height: 16}.Layout(gtx) }),
-		layout.Rigid(func(gtx C) D { return t.layoutTarjetas(gtx, tarjetas) }),
+		layout.Rigid(func(gtx C) D { return v.layoutTarjetas(gtx, t, tarjetas, v.Presentacion) }),
 	)
 }
 
 func (v *Vista) cifrasYLuego(gtx C, t *Tema, datos Datos) D {
-	return t.cifrasResumen(gtx, datos.Est, datos.Resultado.Conteo, v.Presentacion)
+	return v.cifrasResumen(gtx, t, datos.Est, datos.Resultado.Conteo, v.Presentacion)
 }
 
 func (v *Vista) bienvenida(gtx C, t *Tema, datos Datos) D {

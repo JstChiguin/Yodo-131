@@ -153,7 +153,7 @@ func valorCeldaTexto(r modelo.Objeto, indice int) string {
 func (v *Vista) filasPacientes(datos Datos) []modelo.Objeto {
 	busqueda := strings.ToLower(strings.TrimSpace(v.pacientes.buscador.Text()))
 	filas := []modelo.Objeto{}
-	for _, r := range datos.Resultado.Tratamientos {
+	for _, r := range datos.TratamientosPeriodo {
 		if busqueda == "" {
 			filas = append(filas, r)
 			continue
@@ -310,7 +310,7 @@ func (v *Vista) barraTabla(gtx C, t *Tema, cantidad int) D {
 		}),
 		layout.Rigid(func(gtx C) D {
 			return layout.Inset{Left: 16}.Layout(gtx, func(gtx C) D {
-				return t.Nota(formatoNumero(cantidad) + " tratamiento(s) · Todos los tratamientos").Layout(gtx)
+				return t.Nota(formatoNumero(cantidad) + " tratamiento(s) · " + v.describirPeriodo()).Layout(gtx)
 			})
 		}),
 	)

@@ -39,6 +39,13 @@ jobs:
         working-directory: nativo/nucleo
         run: go test ./...
 
+      - name: Prueba de integridad, visibilidad y posición del sello (render headless)
+        shell: bash
+        working-directory: nativo/app
+        run: |
+          go mod tidy
+          go test ./...
+
       - name: Compilar Yodo131.exe nativo (Gio, sin consola)
         shell: bash
         working-directory: nativo/app
@@ -87,6 +94,8 @@ jobs:
           "$EXE" --captura capturas/05-mantenimiento.png --pantalla mantenimiento --carpeta ejemplos 2> cap5.err
           "$EXE" --captura capturas/06-graficos-oscuro.png --pantalla resumen --carpeta ejemplos --tema oscuro 2> cap6.err
           "$EXE" --captura capturas/07-presentacion.png --pantalla resumen --carpeta ejemplos --presentacion 2> cap7.err
+          "$EXE" --captura capturas/08-filtro-periodo.png --pantalla resumen --carpeta ejemplos --desde 2025-01 --hasta 2025-12 2> cap8.err
+          "$EXE" --captura capturas/09-presentacion-realce.png --pantalla resumen --carpeta ejemplos --presentacion --resaltar tarjeta-2 2> cap9.err
           echo "=== errores de captura (si los hubo) ==="
           cat cap*.err 2>/dev/null
           ls -l capturas || true

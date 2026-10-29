@@ -68,13 +68,23 @@ func (t *Tema) encabezadoTarjeta(gtx C, titulo, nota string) D {
 	)
 }
 
-func (t *Tema) cajaConclusion(gtx C, texto string) D {
+func (t *Tema) cajaConclusion(gtx C, texto string, destacada bool) D {
 	if texto == "" {
 		return D{}
 	}
-	return conBarraIzquierda(gtx, t.AcentoSuave, t.Acento, 8, 3, func(gtx C) D {
-		return layout.Inset{Top: 8, Bottom: 8, Left: 12, Right: 12}.Layout(gtx, func(gtx C) D {
-			return t.etiqueta(14, texto, t.Texto, TipografiaCuerpo).Layout(gtx)
+	tam := unit.Sp(15)
+	var anchoBarra unit.Dp = 3
+	padV, padH := unit.Dp(9), unit.Dp(13)
+	if destacada {
+		tam = 20
+		anchoBarra = 5
+		padV, padH = 13, 16
+	}
+	return conBarraIzquierda(gtx, t.AcentoSuave, t.Acento, 8, anchoBarra, func(gtx C) D {
+		return layout.Inset{Top: padV, Bottom: padV, Left: padH, Right: padH}.Layout(gtx, func(gtx C) D {
+			lbl := t.etiqueta(tam, texto, t.Texto, TipografiaCuerpo)
+			lbl.Font.Weight = font.Medium
+			return lbl.Layout(gtx)
 		})
 	})
 }
@@ -121,22 +131,6 @@ func (t *Tema) leyenda(gtx C, items []leyendaItem) D {
 
 func envolver(hijos []layout.FlexChild) []layout.FlexChild {
 	return hijos
-}
-
-func (t *Tema) cifra(gtx C, etiqueta, valor, nota string) D {
-	return widget.Border{Color: t.Borde, CornerRadius: 10, Width: 1}.Layout(gtx, func(gtx C) D {
-		return fondoRedondeado(gtx, t.Panel, 10, func(gtx C) D {
-			return layout.Inset{Top: 14, Bottom: 14, Left: 16, Right: 16}.Layout(gtx, func(gtx C) D {
-				return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-					layout.Rigid(func(gtx C) D { return t.Pequeno(etiqueta, t.Suave).Layout(gtx) }),
-					layout.Rigid(func(gtx C) D {
-						return layout.Inset{Top: 2, Bottom: 2}.Layout(gtx, func(gtx C) D { return t.NumeroGrande(valor).Layout(gtx) })
-					}),
-					layout.Rigid(func(gtx C) D { return t.Pequeno(nota, t.Suave).Layout(gtx) }),
-				)
-			})
-		})
-	})
 }
 
 func (t *Tema) badge(gtx C, texto string, fondo, frente color.NRGBA) D {

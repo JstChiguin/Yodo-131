@@ -201,7 +201,7 @@ type especificacionTarjeta struct {
 	contenido layout.Widget
 }
 
-func (t *Tema) tarjetaDistribucion(titulo, nota, conclusion string, dist estadisticas.Distribucion, colorear func(estadisticas.FilaDist) color.NRGBA, desc func(estadisticas.FilaDist) string, unidadCobertura string) layout.Widget {
+func (t *Tema) tarjetaDistribucion(titulo, nota, conclusion string, dist estadisticas.Distribucion, colorear func(estadisticas.FilaDist) color.NRGBA, desc func(estadisticas.FilaDist) string, unidadCobertura string, presentacion bool) layout.Widget {
 	filas := filasDistribucion(dist, colorear, desc)
 	cobertura := describirCobertura(dist.ConDato, dist.Total, unidadCobertura)
 	return func(gtx C) D {
@@ -209,7 +209,7 @@ func (t *Tema) tarjetaDistribucion(titulo, nota, conclusion string, dist estadis
 			return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 				layout.Rigid(func(gtx C) D { return t.encabezadoTarjeta(gtx, titulo, nota) }),
 				layout.Rigid(func(gtx C) D { return t.espacio(gtx, 8) }),
-				layout.Rigid(func(gtx C) D { return t.cajaConclusion(gtx, conclusion) }),
+				layout.Rigid(func(gtx C) D { return t.cajaConclusion(gtx, conclusion, presentacion) }),
 				layout.Rigid(func(gtx C) D { return t.espacioSi(gtx, 6, conclusion != "") }),
 				layout.Rigid(func(gtx C) D { return t.textoCobertura(gtx, cobertura) }),
 				layout.Rigid(func(gtx C) D { return t.espacio(gtx, 8) }),
@@ -230,7 +230,7 @@ func (t *Tema) espacioSi(gtx C, dp unit.Dp, condicion bool) D {
 	return layout.Spacer{Height: dp}.Layout(gtx)
 }
 
-func (t *Tema) tarjetaAnios(titulo, nota, conclusion, cobertura string, filas []estadisticas.FilaAnio) layout.Widget {
+func (t *Tema) tarjetaAnios(titulo, nota, conclusion, cobertura string, filas []estadisticas.FilaAnio, presentacion bool) layout.Widget {
 	series := t.seriesSexo()
 	leyenda := t.leyendaSexo()
 	return func(gtx C) D {
@@ -238,7 +238,7 @@ func (t *Tema) tarjetaAnios(titulo, nota, conclusion, cobertura string, filas []
 			return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 				layout.Rigid(func(gtx C) D { return t.encabezadoTarjeta(gtx, titulo, nota) }),
 				layout.Rigid(func(gtx C) D { return t.espacio(gtx, 8) }),
-				layout.Rigid(func(gtx C) D { return t.cajaConclusion(gtx, conclusion) }),
+				layout.Rigid(func(gtx C) D { return t.cajaConclusion(gtx, conclusion, presentacion) }),
 				layout.Rigid(func(gtx C) D { return t.espacioSi(gtx, 6, conclusion != "") }),
 				layout.Rigid(func(gtx C) D { return t.textoCobertura(gtx, cobertura) }),
 				layout.Rigid(func(gtx C) D { return t.espacio(gtx, 8) }),
@@ -250,13 +250,13 @@ func (t *Tema) tarjetaAnios(titulo, nota, conclusion, cobertura string, filas []
 	}
 }
 
-func (t *Tema) tarjetaProporciones(titulo, nota, conclusion string, leyenda []leyendaItem, grupos []grupoProp) layout.Widget {
+func (t *Tema) tarjetaProporciones(titulo, nota, conclusion string, leyenda []leyendaItem, grupos []grupoProp, presentacion bool) layout.Widget {
 	return func(gtx C) D {
 		return t.tarjeta(gtx, func(gtx C) D {
 			return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 				layout.Rigid(func(gtx C) D { return t.encabezadoTarjeta(gtx, titulo, nota) }),
 				layout.Rigid(func(gtx C) D { return t.espacio(gtx, 8) }),
-				layout.Rigid(func(gtx C) D { return t.cajaConclusion(gtx, conclusion) }),
+				layout.Rigid(func(gtx C) D { return t.cajaConclusion(gtx, conclusion, presentacion) }),
 				layout.Rigid(func(gtx C) D { return t.espacioSi(gtx, 8, conclusion != "" || len(leyenda) > 0) }),
 				layout.Rigid(func(gtx C) D {
 					if len(leyenda) == 0 {
@@ -282,27 +282,27 @@ func (t *Tema) construirTarjetasResumen(est estadisticas.Estadisticas, umbrales 
 
 	agregar(true, false, t.tarjetaAnios("Tratamientos con yodo 131 por año, según sexo",
 		"Cada barra es un año. Una persona tratada dos veces cuenta dos tratamientos; un mismo tratamiento registrado en varios archivos cuenta una sola vez.",
-		conclusionAnios(est), coberturaAnios(est), est.PorAnio))
+		conclusionAnios(est), coberturaAnios(est), est.PorAnio, presentacion))
 
 	conclusionCan, coberturaCan := conclusionCancer(est)
 	agregar(true, false, t.tarjetaAniosCancer("Pacientes con cáncer de tiroides por año",
 		"Cada paciente se cuenta una vez, en el año de su primer registro de cáncer (registro C73, informe o planilla de yodo).",
-		conclusionCan, coberturaCan, est.CancerPorAnio))
+		conclusionCan, coberturaCan, est.CancerPorAnio, presentacion))
 
 	agregar(false, false, t.tarjetaDistribucion("Diagnóstico", "Diagnóstico de cada tratamiento.",
 		describirMasFrecuente(est.PorDiagnostico, "Lo más frecuente", "tratamientos con diagnóstico", nil),
-		est.PorDiagnostico, func(f estadisticas.FilaDist) color.NRGBA { return t.coloresDiagnostico(f.Categoria) }, nil, unidadResumen))
+		est.PorDiagnostico, func(f estadisticas.FilaDist) color.NRGBA { return t.coloresDiagnostico(f.Categoria) }, nil, unidadResumen, presentacion))
 
 	agregar(false, false, t.tarjetaDistribucion("Motivo de consulta", "Por qué consultó el paciente, según el informe.",
 		describirMasFrecuente(est.PorMotivo, "El motivo más frecuente", "tratamientos con motivo escrito", []string{"Otro"}),
-		est.PorMotivo, func(estadisticas.FilaDist) color.NRGBA { return t.Acento }, nil, unidadResumen))
+		est.PorMotivo, func(estadisticas.FilaDist) color.NRGBA { return t.Acento }, nil, unidadResumen, presentacion))
 
 	agregar(false, false, t.tarjetaDistribucion("Edad", "Edad del paciente en cada tratamiento, en rangos de 10 años.",
-		conclusionEdad(est), est.PorEdad, func(estadisticas.FilaDist) color.NRGBA { return t.Hombres }, nil, unidadResumen))
+		conclusionEdad(est), est.PorEdad, func(estadisticas.FilaDist) color.NRGBA { return t.Hombres }, nil, unidadResumen, presentacion))
 
 	agregar(false, false, t.tarjetaDistribucion("Dosis de yodo 131", "Las dosis bajas suelen usarse en hipertiroidismo; las altas, en el tratamiento del cáncer.",
 		describirMasFrecuente(est.PorDosis, "La dosis más indicada", "tratamientos con dosis", []string{"Rechazó / no recibió"}),
-		est.PorDosis, func(f estadisticas.FilaDist) color.NRGBA { return t.colorDosis(f.Categoria) }, nil, unidadResumen))
+		est.PorDosis, func(f estadisticas.FilaDist) color.NRGBA { return t.colorDosis(f.Categoria) }, nil, unidadResumen, presentacion))
 
 	agregar(true, false, t.tarjetaProporciones("Resultados de exámenes", notaUmbrales(umbrales),
 		conclusionExamenes(est),
@@ -312,9 +312,9 @@ func (t *Tema) construirTarjetasResumen(est estadisticas.Estadisticas, umbrales 
 			t.grupoEstado("Anti-tiroglobulina", est.Examenes["Anti-tiroglobulina"], describirExamen(est.Examenes["Anti-tiroglobulina"])),
 			t.grupoEstado("Anti-TPO", est.Examenes["Anti-TPO"], describirExamen(est.Examenes["Anti-TPO"])),
 			t.grupoEstado("Tiroglobulina", est.Examenes["Tiroglobulina"], describirExamen(est.Examenes["Tiroglobulina"])),
-		}))
+		}, presentacion))
 
-	agregar(false, false, t.tarjetaTirads(est))
+	agregar(false, false, t.tarjetaTirads(est, presentacion))
 
 	agregar(false, false, t.tarjetaDistribucion("Punción (Bethesda)", "Resultado de la punción (PAAF): a mayor número, mayor sospecha de cáncer.",
 		conclusionBethesda(est), distribucionBethesda(est.PorBethesda),
@@ -323,11 +323,11 @@ func (t *Tema) construirTarjetasResumen(est estadisticas.Estadisticas, umbrales 
 		},
 		func(f estadisticas.FilaDist) string {
 			return descripcionBethesda[strings.TrimPrefix(f.Categoria, "Bethesda ")]
-		}, unidadResumen))
+		}, unidadResumen, presentacion))
 
 	agregar(false, false, t.tarjetaDistribucion("Tipo de cáncer de tiroides", "Según biopsia o punción, solo en los tratamientos con cáncer.",
 		describirMasFrecuente(est.PorHistologia, "El tipo más frecuente", "con tipo informado", nil),
-		est.PorHistologia, func(estadisticas.FilaDist) color.NRGBA { return t.Elevado }, nil, "tratamientos con cáncer"))
+		est.PorHistologia, func(estadisticas.FilaDist) color.NRGBA { return t.Elevado }, nil, "tratamientos con cáncer", presentacion))
 
 	agregar(false, false, t.tarjetaProporciones("Antecedentes", "Antecedente familiar de enfermedad tiroidea y tabaquismo.",
 		conclusionAntecedentes(est),
@@ -335,20 +335,20 @@ func (t *Tema) construirTarjetasResumen(est estadisticas.Estadisticas, umbrales 
 		[]grupoProp{
 			t.grupoSiNo("Antecedente familiar tiroideo", est.Antecedentes["Antecedente familiar tiroideo"], describirSiNo(est.Antecedentes["Antecedente familiar tiroideo"])),
 			t.grupoSiNo("Tabaquismo actual o previo", est.Antecedentes["Tabaquismo actual o previo"], describirSiNo(est.Antecedentes["Tabaquismo actual o previo"])),
-		}))
+		}, presentacion))
 
 	agregar(false, false, t.tarjetaDistribucion("Médico tratante", "Tratamientos por médico tratante.",
 		describirMasFrecuente(est.PorMedico, "Con más tratamientos", "con médico registrado", nil),
-		est.PorMedico, func(estadisticas.FilaDist) color.NRGBA { return t.Hombres }, nil, unidadResumen))
+		est.PorMedico, func(estadisticas.FilaDist) color.NRGBA { return t.Hombres }, nil, unidadResumen, presentacion))
 
 	agregar(false, true, t.tarjetaDistribucion("Origen de los datos", "De dónde sale cada tratamiento: informe Word, planilla Excel o ambos unidos.",
-		conclusionOrigen(est), est.PorOrigen, func(f estadisticas.FilaDist) color.NRGBA { return t.coloresOrigen(f.Categoria) }, nil, unidadResumen))
+		conclusionOrigen(est), est.PorOrigen, func(f estadisticas.FilaDist) color.NRGBA { return t.coloresOrigen(f.Categoria) }, nil, unidadResumen, presentacion))
 
 	return tarjetas
 }
 
-func (t *Tema) tarjetaAniosCancer(titulo, nota, conclusion, cobertura string, filas []estadisticas.FilaAnio) layout.Widget {
-	return t.tarjetaAnios(titulo, nota, conclusion, cobertura, filas)
+func (t *Tema) tarjetaAniosCancer(titulo, nota, conclusion, cobertura string, filas []estadisticas.FilaAnio, presentacion bool) layout.Widget {
+	return t.tarjetaAnios(titulo, nota, conclusion, cobertura, filas, presentacion)
 }
 
 func (t *Tema) colorDosis(categoria string) color.NRGBA {
@@ -396,7 +396,7 @@ func conclusionExamenes(est estadisticas.Estadisticas) string {
 	return "El examen más registrado es " + masNombre + ": está en " + formatoNumero(masConDato) + " de " + formatoNumero(est.CantidadTratamientos) + " tratamientos (" + porcentajeTexto(masConDato, est.CantidadTratamientos) + ")."
 }
 
-func (t *Tema) tarjetaTirads(est estadisticas.Estadisticas) layout.Widget {
+func (t *Tema) tarjetaTirads(est estadisticas.Estadisticas, presentacion bool) layout.Widget {
 	ultimo := func(categoria string) int {
 		r := []rune(categoria)
 		n, _ := strconv.Atoi(string(r[len(r)-1]))
@@ -425,7 +425,7 @@ func (t *Tema) tarjetaTirads(est estadisticas.Estadisticas) layout.Widget {
 					return t.encabezadoTarjeta(gtx, "Ecografía tiroidea (TIRADS)", "Clasificación TI-RADS de la ecografía: a mayor número, mayor sospecha de cáncer.")
 				}),
 				layout.Rigid(func(gtx C) D { return t.espacio(gtx, 8) }),
-				layout.Rigid(func(gtx C) D { return t.cajaConclusion(gtx, conclusion) }),
+				layout.Rigid(func(gtx C) D { return t.cajaConclusion(gtx, conclusion, presentacion) }),
 				layout.Rigid(func(gtx C) D { return t.espacioSi(gtx, 6, conclusion != "") }),
 				layout.Rigid(func(gtx C) D { return t.textoCobertura(gtx, cobertura) }),
 				layout.Rigid(func(gtx C) D { return t.espacio(gtx, 8) }),
@@ -477,7 +477,7 @@ func conclusionOrigen(est estadisticas.Estadisticas) string {
 	return formatoNumero(unidos) + " tratamientos tienen datos de Word y de Excel a la vez; sus datos se combinaron y las diferencias quedaron en \"Por revisar\"."
 }
 
-func (t *Tema) cifrasResumen(gtx C, est estadisticas.Estadisticas, conteo modelo.Conteo, presentacion bool) D {
+func (v *Vista) cifrasResumen(gtx C, t *Tema, est estadisticas.Estadisticas, conteo modelo.Conteo, presentacion bool) D {
 	fuentes := []string{}
 	if conteo.InformesWord > 0 {
 		fuentes = append(fuentes, formatoNumero(conteo.InformesWord)+" informes Word")
@@ -520,6 +520,12 @@ func (t *Tema) cifrasResumen(gtx C, est estadisticas.Estadisticas, conteo modelo
 	}
 	return t.enRejilla(gtx, len(visibles), gtx.Dp(168), func(gtx C, indice int) D {
 		tl := visibles[indice]
-		return t.cifra(gtx, tl.etiqueta, tl.valor, tl.nota)
+		return v.conResalto(gtx, t, "cifra-"+strconv.Itoa(indice), presentacion, func(gtx C, resaltado float32) D {
+			colorValor := t.Texto
+			if resaltado > 0 {
+				colorValor = mezclar(t.Acento, t.Texto, float64(resaltado))
+			}
+			return t.cifraColor(gtx, tl.etiqueta, tl.valor, tl.nota, colorValor)
+		})
 	})
 }

@@ -1,6 +1,8 @@
 package vista
 
 import (
+	"strconv"
+
 	"gioui.org/layout"
 	"gioui.org/unit"
 )
@@ -53,7 +55,14 @@ func (t *Tema) rejillaColumnas(gtx C, cantidad, columnas int, celda func(C, int)
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx, hijosFila...)
 }
 
-func (t *Tema) layoutTarjetas(gtx C, tarjetas []especificacionTarjeta) D {
+func (v *Vista) layoutTarjetas(gtx C, t *Tema, tarjetas []especificacionTarjeta, presentacion bool) D {
+	envolverTarjeta := func(indice int, w layout.Widget) layout.Widget {
+		return func(gtx C) D {
+			return v.conResalto(gtx, t, "tarjeta-"+strconv.Itoa(indice), presentacion, func(gtx C, _ float32) D {
+				return w(gtx)
+			})
+		}
+	}
 	hijos := []layout.FlexChild{}
 	agregarEspacio := func() {
 		if len(hijos) > 0 {
@@ -63,17 +72,17 @@ func (t *Tema) layoutTarjetas(gtx C, tarjetas []especificacionTarjeta) D {
 	indice := 0
 	for indice < len(tarjetas) {
 		if tarjetas[indice].ancha {
-			w := tarjetas[indice].contenido
+			w := envolverTarjeta(indice, tarjetas[indice].contenido)
 			agregarEspacio()
 			hijos = append(hijos, layout.Rigid(w))
 			indice++
 			continue
 		}
-		primera := tarjetas[indice].contenido
+		primera := envolverTarjeta(indice, tarjetas[indice].contenido)
 		var segunda layout.Widget
 		indice++
 		if indice < len(tarjetas) && !tarjetas[indice].ancha {
-			segunda = tarjetas[indice].contenido
+			segunda = envolverTarjeta(indice, tarjetas[indice].contenido)
 			indice++
 		}
 		agregarEspacio()

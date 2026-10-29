@@ -27,6 +27,7 @@ type aplicacion struct {
 	tema     *vista.Tema
 	datos    vista.Datos
 	umbrales map[string]float64
+	filtro   estadisticas.Filtro
 	lectura  *modelo.Lectura
 	carpetas []string
 	ventana  *gioapp.Window
@@ -59,12 +60,46 @@ func (a *aplicacion) reconstruir() {
 		return
 	}
 	resultado := procesamiento.ConstruirResultado(*a.lectura, a.umbrales)
-	est := estadisticas.Calcular(resultado, estadisticas.Filtro{})
+	est := estadisticas.Calcular(resultado, a.filtro)
 	a.datos.Resultado = resultado
 	a.datos.Est = est
+	a.datos.TratamientosPeriodo = estadisticas.FiltrarPorPeriodo(resultado.Tratamientos, a.filtro)
 	a.datos.Umbrales = a.umbrales
 	a.datos.TieneDatos = len(resultado.Tratamientos) > 0 || len(resultado.DocumentosNoLeidos) > 0
 	a.datos.NotaArchivos = a.notaArchivos()
+	a.datos.PeriodoMin, a.datos.PeriodoMax = rangoMeses(resultado.Tratamientos)
+	a.datos.CantidadSinFecha = est.CantidadSinFecha
+}
+
+func rangoMeses(tratamientos []modelo.Objeto) (string, string) {
+	minimo, maximo := "", ""
+	for _, tratamiento := range tratamientos {
+		anio, ok := tratamiento.Entero("anio")
+		if !ok {
+			continue
+		}
+		mesMin, mesMax := 1, 12
+		if m, ok := tratamiento.Entero("mes"); ok && m >= 1 && m <= 12 {
+			mesMin, mesMax = m, m
+		}
+		inicio := mesComoTexto(anio, mesMin)
+		fin := mesComoTexto(anio, mesMax)
+		if minimo == "" || inicio < minimo {
+			minimo = inicio
+		}
+		if maximo == "" || fin > maximo {
+			maximo = fin
+		}
+	}
+	return minimo, maximo
+}
+
+func mesComoTexto(anio, mes int) string {
+	texto := strconv.Itoa(mes)
+	if mes < 10 {
+		texto = "0" + texto
+	}
+	return strconv.Itoa(anio) + "-" + texto
 }
 
 func (a *aplicacion) notaArchivos() string {
@@ -166,6 +201,12 @@ func (a *aplicacion) procesarAcciones(acc vista.Acciones) {
 		a.reconstruir()
 		a.mu.Unlock()
 		a.vista.SetMensajeUmbrales("Se volvió a los valores iniciales.")
+	case acc.CambiarPeriodo:
+		a.mu.Lock()
+		a.filtro = estadisticas.Filtro{Desde: acc.PeriodoDesde, Hasta: acc.PeriodoHasta}
+		a.reconstruir()
+		a.mu.Unlock()
+		a.invalidar()
 	}
 }
 
