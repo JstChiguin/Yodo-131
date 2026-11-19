@@ -1,0 +1,16 @@
+#!/bin/sh
+archivo_mensaje="$1"
+correo_autorizado="chiguinchiang@gmail.com"
+
+correo_autor=$(git var GIT_AUTHOR_IDENT | sed -n 's/.*<\(.*\)>.*/\1/p')
+if [ "$correo_autor" != "$correo_autorizado" ]; then
+  echo "Commit rechazado: el autor debe usar el correo $correo_autorizado y no '$correo_autor'." >&2
+  exit 1
+fi
+
+if grep -qiE '^[[:space:]]*(co-authored-by|coauthored-by|co-author|claude-session|signed-off-by:.*(claude|anthropic|openai|copilot|gemini))' "$archivo_mensaje" \
+  || grep -qiE '(generated with|generado con|generado por).*(claude|anthropic|openai|chatgpt|copilot|gemini)|claude\.ai/code|noreply@anthropic\.com' "$archivo_mensaje"; then
+  echo "Commit rechazado: el mensaje contiene coautoría o referencias de autoría de IA." >&2
+  echo "Solo se permite la identidad JstChiguin (Chiguin)." >&2
+  exit 1
+fi

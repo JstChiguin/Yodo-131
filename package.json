@@ -5,7 +5,8 @@
   "description": "Lector offline de informes de yodo 131 - by Chiguin",
   "scripts": {
     "test": "node --test",
-    "pretest": "node pruebas/verificarVersion.mjs"
+    "pretest": "node pruebas/verificarVersion.mjs",
+    "activar-proteccion": "git config core.hooksPath .githooks"
   },
   "devDependencies": {
     "playwright": "1.63.0"
