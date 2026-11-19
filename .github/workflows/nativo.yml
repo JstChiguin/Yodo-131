@@ -7,7 +7,7 @@ on:
     branches: [nativo-go]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   windows:
@@ -99,25 +99,6 @@ jobs:
           echo "=== errores de captura (si los hubo) ==="
           cat cap*.err 2>/dev/null
           ls -l capturas || true
-
-      - name: Publicar capturas en la rama capturas-ci para revisión
-        if: always()
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -e
-          destino="$RUNNER_TEMP/publicar"
-          rm -rf "$destino"
-          mkdir -p "$destino/capturas"
-          cp capturas/*.png "$destino/capturas/"
-          cd "$destino"
-          git init -q
-          git checkout -q -b capturas-ci
-          git add capturas
-          git -c user.name="JstChiguin" -c user.email="chiguinchiang@gmail.com" commit -q -m "capturas CI del render nativo"
-          git push -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" capturas-ci
-          echo "Capturas publicadas en la rama capturas-ci."
 
       - name: Guardar el ejecutable, el Excel y las capturas
         if: always()
